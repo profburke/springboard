@@ -69,8 +69,8 @@ fslurp(const char* path)
 {
   char* data = NULL;
   uint32_t len = 0;
+  size_t read_len;
   struct stat st;
-  int rc;
   FILE* fd;
 
   if (stat(path, &st)) { return NULL; }
@@ -79,12 +79,18 @@ fslurp(const char* path)
   fd = fopen(path, "r");
   if (fd == NULL) { return NULL; }
 
-  data = malloc(sizeof(char*) * (len + 1));
+  data = malloc(sizeof(char) * (len + 1));
   if (data == NULL) { return NULL; }
 
-  fread(data, len, 1, fd);
+  read_len = fread(data, sizeof(char), len, fd);
   fclose(fd);
-  data[len - 1] = '\0';  
+  if (read_len != len) {
+    free(data);
+    errno = EIO;
+    return NULL;
+  }
+
+  data[len] = '\0';
   return data;
 }
 
@@ -110,4 +116,3 @@ ios_load_icons_plist(lua_State *L)
 
   return ios_plist_to_table(L, iconState);
 }
-

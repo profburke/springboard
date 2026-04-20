@@ -52,11 +52,6 @@ local function rgb_to_hsv(r, g, b)
     return h,s,v
 end
 
-
-return math
-
-
-
 local function graphics_magick(m_args)
     local cmdline = "gm " .. m_args
     local _,_,rc = os.execute(cmdline)
@@ -101,18 +96,18 @@ function image.new(icon)
         end,
         -- not the ute.
         hsv = function()
-            r,g,b = icon.image.rgb()
+            local r,g,b = icon.image.rgb()
             return rgb_to_hsv(r,g,b)
         end,
         color = function()
-            h,s,v = icon.image.hsv()
+            local h,s,v = icon.image.hsv()
             local result = hsv_to_color(h,s,v)
             -- cache for next lookup
             icon.image.color = function() return result end
             return result
         end,
         is_dark = function()
-            h,s,v = icon.image.hsv()
+            local h,s,v = icon.image.hsv()
             return v < dark_cutoff
         end,
     }

@@ -55,7 +55,7 @@ void parseNode(lua_State* L, plist_t node, int depth) {
     
     if (name != NULL) { SET_STRING(L, kIconName,name); }
     if (id != NULL) { SET_STRING(L, kIconId,id); }
-    if (bundleId != NULL) { SET_STRING(L, kAppleBundleIdKey,id); }
+    if (bundleId != NULL) { SET_STRING(L, kAppleBundleIdKey,bundleId); }
     storeIconInRegistry(L, node, name, id); 
 
     // TODO: remove the duplication
@@ -135,4 +135,3 @@ char *getStringVal(plist_t dict, const char* key) {
   
   return charVal;
 }
-
