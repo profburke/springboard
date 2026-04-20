@@ -2,3 +2,9 @@
 *~
 *.o
 *.so
+.iTunesJson/
+.iTunesJson.old/
+Prompt.md
+cset.lua
+prints.txt
+scratch/
