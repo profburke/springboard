@@ -234,19 +234,18 @@ Objective:
 
 Stop pretending partial support is acceptable.
 
-Decision required:
+Decision:
 
-- either implement widgets and smart stacks as first-class supported items
-- or mark them as opaque unsupported items that are preserved but not editable
+- widgets and smart stacks are currently treated as opaque unsupported items that are preserved but not editable
 
-Tasks if fully supported:
+Tasks if fully supported later:
 
 - parse `elements` safely
 - guard NULL `bundleIdentifier` values during parse instead of crashing
 - represent widget and stack children explicitly
 - teach traversal and serialization code how to preserve them
 
-Tasks if not fully supported:
+Tasks under the current opaque policy:
 
 - parse them into opaque item objects
 - block unsafe mutations on those objects
@@ -257,6 +256,7 @@ Acceptance criteria:
 
 - no crash path for stacks containing items with missing bundle identifiers
 - support level is explicit in code and docs
+- opaque items are discoverable via dedicated traversal helpers without being treated as apps
 
 ## Phase 5: Split Core And Optional Features
 

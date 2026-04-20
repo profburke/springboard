@@ -29,6 +29,19 @@ local function visit_items(items, visitor)
    end
 end
 
+local function visit_all_items(items, visitor)
+   for _, value in ipairs(items) do
+      if kind.is(value, "page") then
+         visit_all_items(value, visitor)
+      else
+         visitor(value)
+         if kind.is(value, "folder") then
+            visit_all_items(value.items, visitor)
+         end
+      end
+   end
+end
+
 layout_mt.__tostring = function(layout)
    local result = "Layout\n\n"
 
@@ -117,6 +130,27 @@ layout.visit = function(tab, visitor)
    each_page(tab, function(current)
       visit_items(current, visitor)
    end)
+end
+
+layout.visit_items = function(tab, visitor)
+   assert(type(visitor) == "function", "visitor must be a function")
+
+   each_page(tab, function(current)
+      visit_all_items(current, visitor)
+   end)
+end
+
+layout.opaque_items = function(tab)
+   local insert = table.insert
+   local result = {}
+
+   tab:visit_items(function(item)
+      if kind.is(item, "widget") or kind.is(item, "stack") then
+         insert(result, item)
+      end
+   end)
+
+   return result
 end
 
 local dockMax = 4

@@ -61,7 +61,7 @@ void parseNode(lua_State* L, plist_t node, int depth) {
     elements = dictEntry(node, kAppleElementsKey);
     
     if (iconType != NULL && strcmp(iconType, "custom") == 0) {
-      // Item is either a widget or a smart stack.
+      // Widgets and smart stacks are preserved as opaque items.
       addToTable(L, groupSize(elements) > 0 ? kSmartStackTypeKey : kWidgetTypeKey);
     } else {
       // Item is an app or a folder.
@@ -87,9 +87,10 @@ void parseNode(lua_State* L, plist_t node, int depth) {
       lua_setfield(L, -2, kItemsKey);
     }
 
+    // Opaque policy: preserve widgets/stacks as single items for round-trip.
+    // Their internals are intentionally not modeled yet.
     // TODO: "Siri Suggestions" doesn't contain a bundle ID, so
-    // if a stack contains it, the following crashes...
-    // If item is a stack, add the contained widgets as a table.
+    // full stack parsing still needs null-safe element handling.
     // if (groupSize(elements) > 0) {
     // lua_newtable(L);
     //   flatPackArray(L, elements, depth+1);

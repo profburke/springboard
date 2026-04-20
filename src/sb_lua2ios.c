@@ -84,6 +84,8 @@ int addPageIconsToPList(lua_State* L, plist_t page)
     lua_rawgeti(L, -1, i); 
     pageItem = luaToStoredPListItem(L);
 
+    // Under the opaque policy, only folders expose modeled child items here.
+    // Widgets and stacks round-trip via their original stored plist node.
     lua_getfield(L, -1, kItemsKey);
     if (! lua_isnoneornil(L, -1)) 
     {
