@@ -1,8 +1,9 @@
 local image = {}
 
 local cache = require "ios-icons.cache"
-cache = cache.new("./.ios-icon-colors")
-cache.key = function(i) return i.id .. ".rgb" end
+cache = cache.new("./.ios-icon-colors", function(icon)
+    return icon.id .. ".rgb"
+end)
 
 local dark_cutoff = 100
 
@@ -74,7 +75,7 @@ function image.new(icon)
             fd:close() 
         end,
         rgb = function() 
-            local data = cache.get(cache.key(icon), icon.image.make_rgb)        
+            local data = cache.get(icon, icon.image.make_rgb)
             local r,g,b = string.byte(data,1,3)
             return r,g,b
         end,
