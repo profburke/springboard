@@ -13,15 +13,15 @@ static char *const kAppleIconListKey = "iconLists";
 static char *const kAppleIconTypeKey = "iconType";
 static char *const kConnIDName = "connection";
 static char *const kElementsKey = "elements";
-static char *const kFolderTypeKey = "ios-icons.folder";
-static char *const kIconCollectionTypeKey = "ios-icons.icons";
+static char *const kFolderTypeKey = "springboard.folder";
+static char *const kIconCollectionTypeKey = "springboard.icons";
 static char *const kIconId = "id";
 static char *const kIconName = "name";
-static char *const kIconUserDataType = "ios-icons.icon";
+static char *const kIconUserDataType = "springboard.icon";
 static char *const kIconsKey = "icons";
-static char *const kPageTypeKey = "ios-icons.page";
-static char *const kSmartStackTypeKey = "ios-icons.stack";
-static char *const kWidgetTypeKey = "ios-icons.widget";
+static char *const kPageTypeKey = "springboard.page";
+static char *const kSmartStackTypeKey = "springboard.stack";
+static char *const kWidgetTypeKey = "springboard.widget";
 
 int ios_plist_to_table(lua_State* L, plist_t iconState);
 plist_t ios_table_to_plist(lua_State* L);
@@ -36,4 +36,3 @@ plist_t retrieveIconFromRegistry(lua_State* L,
                                  const char* id);
 
 #endif
-

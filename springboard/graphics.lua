@@ -1,6 +1,6 @@
 local graphics = {}
-local image = require "ios-icons.image"
-local fn = require "ios-icons.fn"
+local image = require "springboard.image"
+local fn = require "springboard.fn"
 
 function graphics.on_icons(icons, conn)
     if not icons then error("icons must be provided!") end

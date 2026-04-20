@@ -1,4 +1,4 @@
-local kind = require "ios-icons.kind"
+local kind = require "springboard.kind"
 local stack_mt = {}
 
 stack_mt.__tostring = function(w)

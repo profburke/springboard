@@ -3,7 +3,7 @@ local itunes = {
     pause_between_downloads = 0.5,
 }
 
-local cache = require 'ios-icons.cache'
+local cache = require 'springboard.cache'
 local io = require "io"
 local json = require "json"
 local socket = require "socket"

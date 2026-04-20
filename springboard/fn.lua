@@ -1,5 +1,5 @@
 local insert = table.insert
-local kind = require "ios-icons.kind"
+local kind = require "springboard.kind"
 local fn = {}
 
 

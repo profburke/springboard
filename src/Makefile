@@ -17,7 +17,7 @@ RM = /bin/rm
 
 iosicons: $(OBJS)
 	$(CC) $(LFLAGS) -o iconlib.so $(OBJS) $(LIBS)
-	$(CP) iconlib.so ../ios-icons
+	$(CP) iconlib.so ../springboard
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<

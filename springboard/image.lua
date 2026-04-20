@@ -1,6 +1,6 @@
 local image = {}
 
-local cache = require "ios-icons.cache"
+local cache = require "springboard.cache"
 cache = cache.new("./.ios-icon-colors", function(icon)
     return icon.id .. ".rgb"
 end)

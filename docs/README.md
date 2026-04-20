@@ -1,7 +1,7 @@
-# ios-icons - scripted iphone/ios icon arrangement
+# springboard - scripted iPhone/iOS layout arrangement
 ---
 
-ios-icons is a [lua](http://www.lua.org/) module enabling communication 
+springboard is a [lua](http://www.lua.org/) module enabling communication 
 with iPhone/iPod/iPad device(s) over usb for the purposes of icon arrangement.
 
 ## Usage
@@ -14,7 +14,7 @@ with iPhone/iPod/iPad device(s) over usb for the purposes of icon arrangement.
 
     bash# lua
     Lua 5.2.3  Copyright (C) 1994-2013 Lua.org, PUC-Rio
-    > ios = require "ios-icons"
+    > ios = require "springboard"
     > conn = ios.connect()
     > icons = conn:get_icons()
 
@@ -60,7 +60,7 @@ which are required to build**.
 
     brew install lua --with-completion
     brew install luarocks libimobiledevice libplist
-    luarocks install ios-icons
+    luarocks install springboard
 
 
 **NOTE: The luarocks command above will not work.** ()*It will pull code from the original repository. If the original repository built properly,

@@ -1,19 +1,19 @@
 -- BUSTED! - what's busted precious? http://olivinelabs.com/busted/
 -- sidenote: i don't condone calling dude's prescious.
 
-package.path = '../?.lua;' .. package.path
-package.cpath = '../?.so;' .. package.cpath
+package.path = '../?.lua;../?/init.lua;' .. package.path
+package.cpath = '../?.so;../?/?.so;' .. package.cpath
 
 inspect = require "inspect"
 function pp(x,h) print(inspect(x)) return x end
 traceback = debug.traceback
 
-describe("ios-iconlib", function()
+describe("springboard", function()
   local ios, conn, icons
   local plist_path = "test.plist"
 
   setup(function()
-    ios = require "ios-icons"
+    ios = require "springboard"
   end)
 
   it("loaded ok", function() 
@@ -129,5 +129,4 @@ end)
 
 
   
-
 

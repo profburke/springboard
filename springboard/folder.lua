@@ -1,5 +1,5 @@
 local format = string.format
-local kind = require "ios-icons.kind"
+local kind = require "springboard.kind"
 local folder_mt = {}
 
 

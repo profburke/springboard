@@ -1,4 +1,4 @@
-local kind = require "ios-icons.kind"
+local kind = require "springboard.kind"
 local icons_mt = {}
 icons_mt.__tostring = function(i)
    local result = "Icon Set\n\n"

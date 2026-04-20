@@ -1,7 +1,7 @@
-local ios = require "ios-icons.iconlib"
+local ios = require "springboard.iconlib"
 -- Oh hi, I've just been cleaning up. like what I've
 -- done with the place? oh the code? it's out back.
 
--- ios-icons: icon mgmt via libimobiledeivice.
+-- springboard: layout management via libimobiledevice.
 -- see README.md for instructions.
 return ios

@@ -30,7 +30,7 @@ static const luaL_Reg sbconn_methods[] = {
 };
 
 LUALIB_API int
-luaopen_icons_iconlib(lua_State *L)
+luaopen_springboard_iconlib(lua_State *L)
 {
   luaL_newmetatable(L, kSpringboardConnID); // connection obj
   lua_pushstring(L, kLuaIndexMetaKey);
