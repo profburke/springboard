@@ -4,7 +4,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include "ios-icons.h"
+#include "springboard_api.h"
 #include "util.h"
 
 // Prepopulates a table from another.
@@ -38,5 +38,4 @@ int addToTable(lua_State *L, char* modname) {
   lua_pop(L, 1);
   return 1;
 }
-
 

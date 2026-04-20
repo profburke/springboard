@@ -1,2 +1,2 @@
-iosicons clean:
+springboard clean:
 	cd src; $(MAKE) $@

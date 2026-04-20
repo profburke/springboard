@@ -10,9 +10,9 @@
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/sbservices.h>
 
-#include "ios-icons.h"
+#include "springboard_api.h"
 #include "comms.h"
-#include "icons.h"
+#include "layout.h"
 
 int idevice_errno = 0;
 

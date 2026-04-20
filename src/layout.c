@@ -8,11 +8,11 @@
 
 #include <libimobiledevice/sbservices.h>
 
-#include "ios-icons.h"
+#include "springboard_api.h"
 #include "comms.h"
 #include "springboard.h"
 #include "save_load.h"
-#include "icons.h"
+#include "layout.h"
 
 static const int kPullRetries = 3;
 
@@ -24,10 +24,10 @@ SBConnection* popConnection(lua_State* L)
   return c;
 }
 
-int ios_get_icons(lua_State *L)
+int ios_get_layout(lua_State *L)
 {
   int rc, i, connIdx;
-  plist_t iconState;
+  plist_t layoutState;
 
   SBConnection* c = popConnection(L);
   connIdx = lua_absindex(L, -1);
@@ -36,39 +36,39 @@ int ios_get_icons(lua_State *L)
   for (i=0; rc != SBSERVICES_E_SUCCESS; i++)
   {
     rc = sbservices_get_icon_state(
-          c->sbClient, &iconState, 
+          c->sbClient, &layoutState,
           kSpringboardInfoVersion);
     if (i == kPullRetries) { luaL_error(L, "connect error %d", rc); }
   }
   
-  if ( (rc = ios_plist_to_table(L, iconState)) != 1) {
+  if ( (rc = ios_plist_to_table(L, layoutState)) != 1) {
     luaL_error(L, "convert error %d", rc);
   }
-
-  // add save plist to icons as a convenience
-  lua_pushcfunction(L, ios_save_icons_plist);
+  
+  // add save plist to layout as a convenience
+  lua_pushcfunction(L, ios_save_layout_plist);
   lua_setfield(L, -2, kSavePlistMethodName);
 
   return rc;
 }
 
-int ios_set_icons(lua_State *L)
+int ios_set_layout(lua_State *L)
 {
   int rc;
-  plist_t iconState;
+  plist_t layoutState;
 
   // grab connection info (param 2)
   luaL_checkudata(L, -2, kSpringboardConnID);
   lua_pushvalue(L, -2);
   SBConnection* c = popConnection(L);
   lua_pop(L, 1);
-  lua_remove(L, -2); // leaving icons still at top
+  lua_remove(L, -2); // leaving layout still at top
 
-  iconState = ios_table_to_plist(L);
-  rc = sbservices_set_icon_state(c->sbClient, iconState);
+  layoutState = ios_table_to_plist(L);
+  rc = sbservices_set_icon_state(c->sbClient, layoutState);
 
   if (rc != SBSERVICES_E_SUCCESS) {
-    luaL_error(L, "%s, code=%d", kSetIconsErr, rc);
+    luaL_error(L, "%s, code=%d", kSetLayoutErr, rc);
   }
 
   lua_pop(L, 1); // conn
@@ -76,13 +76,13 @@ int ios_set_icons(lua_State *L)
 }
 
 int
-ios_icon_imagedata(lua_State* L)
+ios_app_imagedata(lua_State* L)
 {
   char* pngdata;
   uint64_t pngsize;
   int rc;
 
-  if (lua_isnoneornil(L, -1)) { luaL_error(L, "missing icon reference"); }
+  if (lua_isnoneornil(L, -1)) { luaL_error(L, "missing app reference"); }
 
   lua_getfield(L, -1, kAppleBundleIdKey);
   const char* bundleID = luaL_checkstring(L, -1);
@@ -92,7 +92,7 @@ ios_icon_imagedata(lua_State* L)
   SBConnection* c = popConnection(L);
   lua_pop(L, 1);
 
-  // fprintf(stderr, "loading icon for %s, using %p\n", bundleID, c);
+  // fprintf(stderr, "loading app image for %s, using %p\n", bundleID, c);
   if ((rc = sbservices_get_icon_pngdata(c->sbClient, 
                                         bundleID, 
                                         &pngdata, 
@@ -129,6 +129,4 @@ ios_wallpaper(lua_State* L)
 
   return 1;
 }
-
-
 

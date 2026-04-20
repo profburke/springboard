@@ -4,7 +4,7 @@
 
 #include <libimobiledevice/libimobiledevice.h>
 
-#include "ios-icons.h"
+#include "springboard_api.h"
 #include "springboard.h"
 
 int addPageIconsToPList(lua_State* L, plist_t page);
@@ -12,11 +12,11 @@ void addIconsToGroup(lua_State* L, plist_t group);
 
 plist_t ios_table_to_plist(lua_State* L)
 {
-  plist_t iconState, currentPage;
+  plist_t layoutState, currentPage;
   int i;
   int len;
 
-  iconState = plist_new_array();
+  layoutState = plist_new_array();
 
   if (lua_type(L, -1) != LUA_TTABLE) {
     luaL_error(L, "internal error! can't convert %s to layout", 
@@ -26,7 +26,7 @@ plist_t ios_table_to_plist(lua_State* L)
   lua_getfield(L, -1, kDockKey);
   if (lua_istable(L, -1)) {
     currentPage = plist_new_array();
-    plist_array_append_item(iconState, currentPage);
+    plist_array_append_item(layoutState, currentPage);
     addPageIconsToPList(L, currentPage);
   }
   lua_pop(L, 1);
@@ -38,7 +38,7 @@ plist_t ios_table_to_plist(lua_State* L)
 
     if (lua_istable(L, -1)) {
       currentPage = plist_new_array();
-      plist_array_append_item(iconState, currentPage);
+      plist_array_append_item(layoutState, currentPage);
       addPageIconsToPList(L, currentPage);
     }
 
@@ -46,7 +46,7 @@ plist_t ios_table_to_plist(lua_State* L)
   }
   lua_pop(L, 1);
 
-  return iconState;
+  return layoutState;
 }
 
 plist_t luaToStoredPListItem(lua_State* L)
@@ -56,14 +56,14 @@ plist_t luaToStoredPListItem(lua_State* L)
   lua_getfield(L, -1, kItemName);
   lua_getfield(L, -2, kItemId);
   
-  pageItem = retrieveIconFromRegistry(L, 
+  pageItem = retrieveItemFromRegistry(L, 
                     lua_tostring(L, -2),
                     lua_tostring(L, -1));
 
   if (pageItem == NULL) 
   { 
     luaL_error(L, "%s (name=%s, id=%s)", 
-                    kUnknownIconData, 
+                    kUnknownItemData, 
                     lua_tostring(L, -2), 
                     lua_tostring(L, -1));
   }

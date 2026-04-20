@@ -4,21 +4,19 @@
 
 #include <plist/plist.h>
 
-#include "ios-icons.h"
-#include "icons.h"
+#include "springboard_api.h"
+#include "layout.h"
 #include "springboard.h"
 #include "util.h"
 #include "sb_ios2lua.h"
 
-// Converts the passed in plist and converts it to a Lua table.
-// The entry at index 1 is the dock icons, so page 1 is at index 2
-// and so on.
-int ios_plist_to_table(lua_State* L, plist_t iconState) {
+// Converts the passed in plist into a Layout table.
+int ios_plist_to_table(lua_State* L, plist_t layoutState) {
   int rootIdx, layoutIdx, pagesIdx;
   int pageCount, i;
 
   lua_newtable(L);
-  parseNode(L, iconState, 0);
+  parseNode(L, layoutState, 0);
   lua_rawgeti(L, -1, 1);
   rootIdx = lua_absindex(L, -1);
 
@@ -71,14 +69,14 @@ void parseNode(lua_State* L, plist_t node, int depth) {
     }
 
     if (name == NULL && id == NULL) {
-      lua_pushstring(L, "unexpected value reading icons!");
+      lua_pushstring(L, "unexpected value reading layout!");
       lua_error(L);
     }
     
     if (name != NULL) { SET_STRING(L, kItemName,name); }
     if (id != NULL) { SET_STRING(L, kItemId,id); }
     if (bundleId != NULL) { SET_STRING(L, kAppleBundleIdKey,bundleId); }
-    storeIconInRegistry(L, node, name, id); 
+    storeItemInRegistry(L, node, name, id); 
 
     // TODO: remove the duplication
     

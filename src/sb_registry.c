@@ -5,33 +5,33 @@
 
 #include <plist/plist.h>
 
-#include "ios-icons.h"
+#include "springboard_api.h"
 
 #define NEVER_NULL(S) (S == NULL) ? "" : S
 static const char RegKey = 'k';
 
-static int uncheckedGetIconStore(lua_State* L) {
+static int uncheckedGetItemStore(lua_State* L) {
   lua_pushlightuserdata(L, (void *)&RegKey);
   lua_gettable(L, LUA_REGISTRYINDEX);
   return 1;    
 }
 
-static int getIconStore(lua_State* L) {
-  uncheckedGetIconStore(L);
+static int getItemStore(lua_State* L) {
+  uncheckedGetItemStore(L);
   if (lua_isnoneornil(L, -1)) {
     lua_pop(L, 1); 
     lua_pushlightuserdata(L, (void *)&RegKey);
     lua_newtable(L);
     lua_settable(L, LUA_REGISTRYINDEX);
-    uncheckedGetIconStore(L); 
+    uncheckedGetItemStore(L); 
   }
   
   return 1;
 }
 
-void makeIconRegRegKey(lua_State* L, 
-                       const char* name, 
-                       const char* id) {
+void makeItemRegistryKey(lua_State* L,
+                         const char* name,
+                         const char* id) {
   luaL_Buffer B;
   luaL_buffinit(L, &B);
   luaL_addstring(&B, NEVER_NULL((char*)name));
@@ -40,31 +40,30 @@ void makeIconRegRegKey(lua_State* L,
   luaL_pushresult(&B);
 }
 
-void storeIconInRegistry(lua_State* L, 
-                         plist_t icon,
+void storeItemInRegistry(lua_State* L,
+                         plist_t item,
                          const char* name,
                          const char* id) {
   const char* k;
   
-  getIconStore(L);
-  makeIconRegRegKey(L, name, id);
+  getItemStore(L);
+  makeItemRegistryKey(L, name, id);
   k = lua_tostring(L, -1);
-  lua_pushlightuserdata(L, (void *)icon);
+  lua_pushlightuserdata(L, (void *)item);
   lua_setfield(L, -3, k);
-  lua_pop(L, 2); // pop off icon store and RegKey
+  lua_pop(L, 2); // pop off item store and RegKey
 }
 
-plist_t retrieveIconFromRegistry(lua_State* L,
+plist_t retrieveItemFromRegistry(lua_State* L,
                                  const char* name,
                                  const char* id) {
   plist_t node = NULL;
   
-  getIconStore(L);
-  makeIconRegRegKey(L, name, id);
+  getItemStore(L);
+  makeItemRegistryKey(L, name, id);
   lua_getfield(L, -2, lua_tostring(L, -1));
   node = lua_touserdata(L, -1);
-  lua_pop(L, 3); // pop off icon, RegKey, store
+  lua_pop(L, 3); // pop off item, RegKey, store
 
   return node;
 }
-

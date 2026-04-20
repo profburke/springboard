@@ -3,26 +3,26 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include "ios-icons.h"
+#include "springboard_api.h"
 #include "comms.h"
 #include "save_load.h"
-#include "icons.h"
+#include "layout.h"
 
 static const char* kLuaIndexMetaKey = "__index";
 
 static const luaL_Reg iconlib_methods[] = {
   { "connect", ios_connect }, 
   { "ios_errno", ios_errno }, 
-  { "load_plist", ios_load_icons_plist },
+  { "load_plist", ios_load_layout_plist },
   { NULL, NULL }
 };
 
 static const luaL_Reg sbconn_methods[] = {
   { "disconnect", ios_disconnect }, 
-  { "layout", ios_get_icons }, 
-  { "get_layout", ios_get_icons }, 
-  { "set_layout", ios_set_icons }, 
-  { "app_image", ios_icon_imagedata },
+  { "layout", ios_get_layout }, 
+  { "get_layout", ios_get_layout }, 
+  { "set_layout", ios_set_layout }, 
+  { "app_image", ios_app_imagedata },
   { "wallpaper", ios_wallpaper },
   { "devicename", ios_devicename },
   { "__tostring", conn_tostring }, 

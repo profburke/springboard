@@ -25,15 +25,15 @@ static char *const kAppTypeKey = "springboard.app";
 static char *const kSmartStackTypeKey = "springboard.stack";
 static char *const kWidgetTypeKey = "springboard.widget";
 
-int ios_plist_to_table(lua_State* L, plist_t iconState);
+int ios_plist_to_table(lua_State* L, plist_t layoutState);
 plist_t ios_table_to_plist(lua_State* L);
 
-void storeIconInRegistry(lua_State* L,
-                         plist_t icon,
+void storeItemInRegistry(lua_State* L,
+                         plist_t item,
                          const char* name,
                          const char* id);
 
-plist_t retrieveIconFromRegistry(lua_State* L,
+plist_t retrieveItemFromRegistry(lua_State* L,
                                  const char* name,
                                  const char* id);
 
