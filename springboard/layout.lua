@@ -42,6 +42,19 @@ local function visit_all_items(items, visitor)
    end
 end
 
+local function assert_apps_only(items, operation)
+   for idx, value in ipairs(items) do
+      if not kind.is(value, "app") then
+         error(string.format(
+            "%s only supports app items; found %s at index %d",
+            operation,
+            kind.of(value),
+            idx
+         ))
+      end
+   end
+end
+
 layout_mt.__tostring = function(layout)
    local result = "Layout\n\n"
 
@@ -153,6 +166,10 @@ layout.opaque_items = function(tab)
    return result
 end
 
+layout.has_opaque_items = function(tab)
+   return #tab:opaque_items() > 0
+end
+
 local dockMax = 4
 local pageMax = 9
 -- TODO: handle fillPercent
@@ -163,6 +180,8 @@ layout.reshape = function(tab, fillPercent)
    local current_page = {}
    local count = 1
    local insert = table.insert
+
+   assert_apps_only(tab, "layout.reshape")
 
    for i, value in ipairs(tab) do
       if i < dockMax then
