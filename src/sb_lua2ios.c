@@ -12,32 +12,39 @@ void addIconsToGroup(lua_State* L, plist_t group);
 
 plist_t ios_table_to_plist(lua_State* L)
 {
-  plist_t iconState, p;
-  iconState = plist_new_array();
+  plist_t iconState, currentPage;
   int i;
+  int len;
+
+  iconState = plist_new_array();
 
   if (lua_type(L, -1) != LUA_TTABLE) {
-    luaL_error(L, "internal error! can't convert %s to icons", 
+    luaL_error(L, "internal error! can't convert %s to layout", 
                   luaL_typename(L, -1));
   }
 
-  // Iterate dock+pages
-  int len = lua_rawlen(L, -1);
-  for (i=1; i< len+1; i++) 
-  {
-    // push page to top of stack
+  lua_getfield(L, -1, kDockKey);
+  if (lua_istable(L, -1)) {
+    currentPage = plist_new_array();
+    plist_array_append_item(iconState, currentPage);
+    addPageIconsToPList(L, currentPage);
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, -1, kPagesKey);
+  len = lua_rawlen(L, -1);
+  for (i=1; i< len+1; i++) {
     lua_rawgeti(L, -1, i);
 
-    // create plist page to match
-    if (lua_istable(L, -1))
-    {
-      p = plist_new_array(); 
-      plist_array_append_item(iconState, p);
-      addPageIconsToPList(L, p);
+    if (lua_istable(L, -1)) {
+      currentPage = plist_new_array();
+      plist_array_append_item(iconState, currentPage);
+      addPageIconsToPList(L, currentPage);
     }
 
     lua_pop(L, 1);
   }
+  lua_pop(L, 1);
 
   return iconState;
 }
@@ -46,8 +53,8 @@ plist_t luaToStoredPListItem(lua_State* L)
 {
   plist_t pageItem;
 
-  lua_getfield(L, -1, kIconName);
-  lua_getfield(L, -2, kIconId);
+  lua_getfield(L, -1, kItemName);
+  lua_getfield(L, -2, kItemId);
   
   pageItem = retrieveIconFromRegistry(L, 
                     lua_tostring(L, -2),
@@ -77,7 +84,7 @@ int addPageIconsToPList(lua_State* L, plist_t page)
     lua_rawgeti(L, -1, i); 
     pageItem = luaToStoredPListItem(L);
 
-    lua_getfield(L, -1, kIconsKey);
+    lua_getfield(L, -1, kItemsKey);
     if (! lua_isnoneornil(L, -1)) 
     {
       pageItem = plist_copy(pageItem);
@@ -107,4 +114,3 @@ void addIconsToGroup(lua_State* L, plist_t group)
   }
   plist_dict_set_item(group, kAppleIconListKey, wasteful_format);
 }
-

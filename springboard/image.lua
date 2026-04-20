@@ -1,8 +1,8 @@
 local image = {}
 
 local cache = require "springboard.cache"
-cache = cache.new("./.ios-icon-colors", function(icon)
-    return icon.id .. ".rgb"
+cache = cache.new("./.ios-icon-colors", function(app)
+    return app.id .. ".rgb"
 end)
 
 local dark_cutoff = 100
@@ -64,26 +64,26 @@ end
 -- TODO: need to identify webapps and cope with the fact that
 -- springboard will not return icons for them
 
--- returns pseudo image object for provided icon
-function image.new(icon)
+-- returns pseudo image object for provided app
+function image.new(app)
     return {
         -- write png to disk
         save = function(path)
             local fd = io.open(path, "wb")
-            fd:write(icon.imagedata())
+            fd:write(app.imagedata())
             fd:flush()
             fd:close() 
         end,
         rgb = function() 
-            local data = cache.get(icon, icon.image.make_rgb)
+            local data = cache.get(app, app.image.make_rgb)
             local r,g,b = string.byte(data,1,3)
             return r,g,b
         end,
-        -- use (gm)magick to generate average rgb for icon image
+        -- use (gm)magick to generate average rgb for app image
         make_rgb = function()
             local pngfile = os.tmpname() .. ".png"
             local rgbfile = os.tmpname() .. ".rgb"
-            icon.image.save(pngfile)
+            app.image.save(pngfile)
 
             graphics_magick("convert " .. pngfile 
                                        .. " -colors 16"
@@ -97,18 +97,18 @@ function image.new(icon)
         end,
         -- not the ute.
         hsv = function()
-            local r,g,b = icon.image.rgb()
+            local r,g,b = app.image.rgb()
             return rgb_to_hsv(r,g,b)
         end,
         color = function()
-            local h,s,v = icon.image.hsv()
+            local h,s,v = app.image.hsv()
             local result = hsv_to_color(h,s,v)
             -- cache for next lookup
-            icon.image.color = function() return result end
+            app.image.color = function() return result end
             return result
         end,
         is_dark = function()
-            local h,s,v = icon.image.hsv()
+            local h,s,v = app.image.hsv()
             return v < dark_cutoff
         end,
     }

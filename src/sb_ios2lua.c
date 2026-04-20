@@ -14,9 +14,31 @@
 // The entry at index 1 is the dock icons, so page 1 is at index 2
 // and so on.
 int ios_plist_to_table(lua_State* L, plist_t iconState) {
+  int rootIdx, layoutIdx, pagesIdx;
+  int pageCount, i;
+
   lua_newtable(L);
   parseNode(L, iconState, 0);
   lua_rawgeti(L, -1, 1);
+  rootIdx = lua_absindex(L, -1);
+
+  lua_newtable(L);
+  addToTable(L, kLayoutTypeKey);
+  layoutIdx = lua_absindex(L, -1);
+
+  lua_rawgeti(L, rootIdx, 1);
+  lua_setfield(L, layoutIdx, kDockKey);
+
+  lua_newtable(L);
+  pagesIdx = lua_absindex(L, -1);
+  pageCount = lua_rawlen(L, rootIdx);
+  for (i=2; i<pageCount+1; i++) {
+    lua_rawgeti(L, rootIdx, i);
+    lua_rawseti(L, pagesIdx, i - 1);
+  }
+  lua_setfield(L, layoutIdx, kPagesKey);
+
+  lua_remove(L, rootIdx);
   lua_remove(L, -2);
   return 1;
 }
@@ -45,7 +67,7 @@ void parseNode(lua_State* L, plist_t node, int depth) {
       addToTable(L, groupSize(elements) > 0 ? kSmartStackTypeKey : kWidgetTypeKey);
     } else {
       // Item is an app or a folder.
-      addToTable(L, groupSize(kids) > 0 ? kFolderTypeKey : kIconUserDataType);
+      addToTable(L, groupSize(kids) > 0 ? kFolderTypeKey : kAppTypeKey);
     }
 
     if (name == NULL && id == NULL) {
@@ -53,8 +75,8 @@ void parseNode(lua_State* L, plist_t node, int depth) {
       lua_error(L);
     }
     
-    if (name != NULL) { SET_STRING(L, kIconName,name); }
-    if (id != NULL) { SET_STRING(L, kIconId,id); }
+    if (name != NULL) { SET_STRING(L, kItemName,name); }
+    if (id != NULL) { SET_STRING(L, kItemId,id); }
     if (bundleId != NULL) { SET_STRING(L, kAppleBundleIdKey,bundleId); }
     storeIconInRegistry(L, node, name, id); 
 
@@ -64,7 +86,7 @@ void parseNode(lua_State* L, plist_t node, int depth) {
     if (groupSize(kids) > 0) {
       lua_newtable(L);
       flatPackArray(L, kids, depth+1);
-      lua_setfield(L, -2, kIconsKey);
+      lua_setfield(L, -2, kItemsKey);
     }
 
     // TODO: "Siri Suggestions" doesn't contain a bundle ID, so
@@ -79,7 +101,7 @@ break;
     
   case PLIST_ARRAY:
     lua_newtable(L);
-    addToTable(L, depth == 0 ? kIconCollectionTypeKey : kPageTypeKey);
+    addToTable(L, depth == 0 ? kLayoutTypeKey : kPageTypeKey);
     
     numChildren = groupSize(node);
     for (i=0;i<numChildren;i++) {

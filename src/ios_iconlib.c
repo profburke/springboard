@@ -19,10 +19,10 @@ static const luaL_Reg iconlib_methods[] = {
 
 static const luaL_Reg sbconn_methods[] = {
   { "disconnect", ios_disconnect }, 
-  { "icons", ios_get_icons }, 
-  { "get_icons", ios_get_icons }, 
-  { "set_icons", ios_set_icons }, 
-  { "icon_image", ios_icon_imagedata },
+  { "layout", ios_get_icons }, 
+  { "get_layout", ios_get_icons }, 
+  { "set_layout", ios_set_icons }, 
+  { "app_image", ios_icon_imagedata },
   { "wallpaper", ios_wallpaper },
   { "devicename", ios_devicename },
   { "__tostring", conn_tostring }, 

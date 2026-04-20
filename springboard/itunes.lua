@@ -18,8 +18,8 @@ end
 -- sadly had to use a private api here, 
 -- apple's official one doesn't (atow tbomk)
 -- support lookup by bundleID
-local itunes_url = function(icon)
-    return ("http://itunes.apple.com/" .. "lookup?bundleId=" .. icon.id)
+local itunes_url = function(app)
+    return ("http://itunes.apple.com/" .. "lookup?bundleId=" .. app.id)
 end
 
 -- json cache store. * I have no idea if apple own a 
@@ -40,51 +40,51 @@ local rate_limit = function()
     itunes.last_fetch = os.clock()
 end
 
-local add_itunes_data = function(icon)  
+local add_itunes_data = function(app)
     local raw = nil ; local cache = itunes.cache
-    if cache then raw = cache.get(icon) end
+    if cache then raw = cache.get(app) end
 
     if not raw then
         rate_limit()
-        local url = itunes_url(icon)
-        raw = http.request(itunes_url(icon))
-        if cache then cache.set(icon, raw) end
+        local url = itunes_url(app)
+        raw = http.request(itunes_url(app))
+        if cache then cache.set(app, raw) end
     end
 
     if raw then
         data = json.decode(raw) 
         if data.results and #data.results == 1 then
-            icon.data = data.results[1]
+            app.data = data.results[1]
         end
     end
     return data
 end
 
--- adds itunes data to ALL icons for which it can.
+-- adds itunes data to ALL apps for which it can.
 -- this is likely to be time consuming on the first run
 -- (expect ~2 seconds per app)
-local add_itunes_to_all = function(icons, on_process)   
-    icons:visit(function(icon)
-        icon:add_itunes_data()
-        if on_process then on_process(icon) end
+local add_itunes_to_all = function(layout, on_process)
+    layout:visit(function(app)
+        app:add_itunes_data()
+        if on_process then on_process(app) end
     end)
 end
 
 
-function itunes.on_icons(icons)
-    if not icons then error("no icons provided!") end
-    if not icons.visit then error("unexpected value found for icons!") end
+function itunes.on_layout(layout)
+    if not layout then error("no layout provided!") end
+    if not layout.visit then error("unexpected value found for layout!") end
 
-    icons:visit(function(icon)
-        if icon["id"] then 
-            icon.add_itunes_data = add_itunes_data
+    layout:visit(function(app)
+        if app["id"] then 
+            app.add_itunes_data = add_itunes_data
         else
-            icon.add_itunes_data = function() end
+            app.add_itunes_data = function() end
         end
     end)
-    icons.add_itunes_data = add_itunes_to_all
+    layout.add_itunes_data = add_itunes_to_all
 
-    icons.itunes_cache = function() return itunes.cache end
+    layout.itunes_cache = function() return itunes.cache end
 end
 
 return itunes

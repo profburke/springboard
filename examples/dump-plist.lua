@@ -13,5 +13,5 @@ if (not status) then
    os.exit(1)
 end
 
-icons = conn:icons()
-icons:save_plist 'springboard.plist'
+layout = conn:layout()
+layout:save_plist 'springboard.plist'

@@ -13,9 +13,9 @@ if (not status) then
    os.exit(1)
 end
 
-icons = conn:icons()
-app = icons[1][1]
-img = conn:icon_image(app)
+layout = conn:layout()
+app = layout.dock[1]
+img = conn:app_image(app)
 
 f = io.open("leftdock.png", 'w')
 f:write(img)

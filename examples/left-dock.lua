@@ -13,9 +13,8 @@ if (not status) then
    os.exit(1)
 end
 
-icons = conn:icons()
+layout = conn:layout()
 
 
 print "Info on the left-most docked app:\n"
-for k,v in pairs(icons[1][1]) do print(string.format('%18s: %s', k, v)) end
-
+for k,v in pairs(layout.dock[1]) do print(string.format('%18s: %s', k, v)) end

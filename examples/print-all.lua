@@ -13,8 +13,7 @@ if (not status) then
    os.exit(1)
 end
 
-icons = conn:icons()
-dock = icons:dock()
+layout = conn:layout()
 
 print "All the apps on all your device's pages:"
-print(icons)
+print(layout)

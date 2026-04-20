@@ -12,25 +12,31 @@ end
 
 fn.select = function(tab, cond)
    assert(type(cond) == 'function', 'cond must be a predicate')
-   local t = tab
    local result = {}
 
-   if kind.is(t, "folder") then
-      t = t.icons
-   end
-   
-   for _,v in pairs(t) do
-      if kind.is(v, "folder") then
-         local fresult = fn.select(v.icons, cond)
-         append(result, fresult)
-      elseif kind.is(v, "page") then
-         local fresult = fn.select(v, cond)
-         append(result, fresult)
-      elseif kind.is(v, "icon") then
-         if cond(v) then
-            insert(result, v)
+   local function collect(items)
+      for _, value in ipairs(items) do
+         if kind.is(value, "folder") then
+            collect(value.items)
+         elseif kind.is(value, "page") then
+            collect(value)
+         elseif kind.is(value, "app") then
+            if cond(value) then
+               insert(result, value)
+            end
          end
       end
+   end
+
+   if kind.is(tab, "layout") then
+      collect(tab.dock)
+      for _, page in ipairs(tab.pages) do
+         collect(page)
+      end
+   elseif kind.is(tab, "folder") then
+      collect(tab.items)
+   else
+      collect(tab)
    end
 
    return result
