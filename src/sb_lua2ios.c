@@ -52,23 +52,20 @@ plist_t ios_table_to_plist(lua_State* L)
 plist_t luaToStoredPListItem(lua_State* L)
 {
   plist_t pageItem;
+  const char* ref;
 
-  lua_getfield(L, -1, kItemName);
-  lua_getfield(L, -2, kItemId);
+  lua_getfield(L, -1, kItemRef);
+  ref = lua_tostring(L, -1);
+  lua_pop(L, 1);
   
-  pageItem = retrieveItemFromRegistry(L, 
-                    lua_tostring(L, -2),
-                    lua_tostring(L, -1));
+  pageItem = retrieveItemFromRegistry(L, ref);
 
   if (pageItem == NULL) 
   { 
-    luaL_error(L, "%s (name=%s, id=%s)", 
+    luaL_error(L, "%s (ref=%s)", 
                     kUnknownItemData, 
-                    lua_tostring(L, -2), 
-                    lua_tostring(L, -1));
+                    ref);
   }
-
-  lua_pop(L, 2); // name + id
 
   return pageItem;
 }

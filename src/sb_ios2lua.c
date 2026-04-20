@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <lua.h>
+#include <lauxlib.h>
 
 #include <plist/plist.h>
 
@@ -76,7 +77,11 @@ void parseNode(lua_State* L, plist_t node, int depth) {
     if (name != NULL) { SET_STRING(L, kItemName,name); }
     if (id != NULL) { SET_STRING(L, kItemId,id); }
     if (bundleId != NULL) { SET_STRING(L, kAppleBundleIdKey,bundleId); }
-    storeItemInRegistry(L, node, name, id); 
+    storeItemInRegistry(L, node);
+    if (lua_type(L, -2) != LUA_TTABLE) {
+      luaL_error(L, "registry stack corruption before item ref set");
+    }
+    lua_setfield(L, -2, kItemRef);
 
     // TODO: remove the duplication
     
