@@ -1,4 +1,5 @@
 local insert = table.insert
+local kind = require "ios-icons.kind"
 local fn = {}
 
 
@@ -14,19 +15,18 @@ fn.select = function(tab, cond)
    local t = tab
    local result = {}
 
-   if type(t) == 'folder' then
+   if kind.is(t, "folder") then
       t = t.icons
    end
    
    for _,v in pairs(t) do
-      local vt = type(v)
-      if vt == 'folder' then
+      if kind.is(v, "folder") then
          local fresult = fn.select(v.icons, cond)
          append(result, fresult)
-      elseif vt == 'page' then
+      elseif kind.is(v, "page") then
          local fresult = fn.select(v, cond)
          append(result, fresult)
-      elseif vt == 'icon' then
+      elseif kind.is(v, "icon") then
          if cond(v) then
             insert(result, v)
          end
@@ -39,4 +39,3 @@ end
 
 
 return fn
-

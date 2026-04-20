@@ -1,3 +1,4 @@
+local kind = require "ios-icons.kind"
 local icons_mt = {}
 icons_mt.__tostring = function(i)
    local result = "Icon Set\n\n"
@@ -15,9 +16,11 @@ icons_mt.__tostring = function(i)
    return result
 end
 
+kind.register(icons_mt, "icons")
 
 local icons = {}
 icons.__meta = icons_mt
+icons_mt.__index = icons
 
 
 
@@ -27,12 +30,11 @@ icons.flatten = function(tab)
    
    local function flatten(tab)
       for _,v in pairs(tab) do
-         local vt = type(v)
-         if vt == 'icon' then
+         if kind.is(v, "icon") then
             insert(result, v)
-         elseif vt == 'page' then
+         elseif kind.is(v, "page") then
             flatten(v)
-         elseif vt == 'folder' then
+         elseif kind.is(v, "folder") then
             flatten(v.icons)
          end
       end
@@ -105,12 +107,11 @@ end
 icons.visit = function(tab, visitor)
    assert(type(visitor) == 'function', 'visitor must be a function')
    for _,v in pairs(tab) do
-      local vt = type(v)
-      if vt == 'folder' then
+      if kind.is(v, "folder") then
          icons.visit(v.icons, visitor)
-      elseif vt == 'page' then
+      elseif kind.is(v, "page") then
          icons.visit(v, visitor)
-      elseif vt == 'icon' then
+      elseif kind.is(v, "icon") then
          visitor(v)
       end
    end
@@ -151,5 +152,3 @@ end
 
 
 return icons
-
-

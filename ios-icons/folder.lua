@@ -1,4 +1,5 @@
 local format = string.format
+local kind = require "ios-icons.kind"
 local folder_mt = {}
 
 
@@ -6,20 +7,11 @@ folder_mt.__tostring = function(f)
    return format('<folder: %s>', f.name)
 end
 
+kind.register(folder_mt, "folder")
 
 local folder = {}
 folder.__meta = folder_mt
-
-
-local oldtype = type
-function type(v)
-   if getmetatable(v) == folder_mt then
-      return 'folder'
-   else
-      return oldtype(v)
-   end
-end
+folder_mt.__index = folder
 
 
 return folder
-
