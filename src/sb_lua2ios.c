@@ -53,12 +53,20 @@ plist_t luaToStoredPListItem(lua_State* L)
 {
   plist_t pageItem;
   const char* ref;
+  int handleType;
 
   lua_getfield(L, -1, kItemRef);
   ref = lua_tostring(L, -1);
   lua_pop(L, 1);
+
+  lua_getfield(L, -1, kItemStoreHandle);
+  handleType = lua_type(L, -1);
+  if (handleType != LUA_TUSERDATA) {
+    luaL_error(L, "missing item store handle for ref=%s", ref);
+  }
   
-  pageItem = retrieveItemFromRegistry(L, ref);
+  pageItem = retrieveItemFromRegistry(L, -1, ref);
+  lua_pop(L, 1);
 
   if (pageItem == NULL) 
   { 

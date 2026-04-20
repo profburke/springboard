@@ -7,6 +7,7 @@
 #include "comms.h"
 #include "save_load.h"
 #include "layout.h"
+#include "springboard.h"
 
 static const char* kLuaIndexMetaKey = "__index";
 
@@ -14,6 +15,11 @@ static const luaL_Reg iconlib_methods[] = {
   { "connect", ios_connect }, 
   { "ios_errno", ios_errno }, 
   { "load_plist", ios_load_layout_plist },
+  { NULL, NULL }
+};
+
+static const luaL_Reg item_store_methods[] = {
+  { "__gc", itemStoreHandle_gc },
   { NULL, NULL }
 };
 
@@ -32,6 +38,10 @@ static const luaL_Reg sbconn_methods[] = {
 LUALIB_API int
 luaopen_springboard_iconlib(lua_State *L)
 {
+  luaL_newmetatable(L, kItemStoreHandleID);
+  luaL_setfuncs(L, item_store_methods, 0);
+  lua_pop(L, 1);
+
   luaL_newmetatable(L, kSpringboardConnID); // connection obj
   lua_pushstring(L, kLuaIndexMetaKey);
   lua_pushvalue(L, -2); /* pushes the metatable */

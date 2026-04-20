@@ -13,11 +13,13 @@
 
 // Converts the passed in plist into a Layout table.
 int ios_plist_to_table(lua_State* L, plist_t layoutState) {
-  int rootIdx, layoutIdx, pagesIdx;
+  int handleIdx, rootIdx, layoutIdx, pagesIdx;
   int pageCount, i;
 
+  pushItemStoreHandle(L);
+  handleIdx = lua_absindex(L, -1);
   lua_newtable(L);
-  parseNode(L, layoutState, 0);
+  parseNode(L, layoutState, 0, handleIdx);
   lua_rawgeti(L, -1, 1);
   rootIdx = lua_absindex(L, -1);
 
@@ -37,12 +39,16 @@ int ios_plist_to_table(lua_State* L, plist_t layoutState) {
   }
   lua_setfield(L, layoutIdx, kPagesKey);
 
+  lua_pushvalue(L, handleIdx);
+  lua_setfield(L, layoutIdx, kItemStoreHandle);
+
   lua_remove(L, rootIdx);
+  lua_remove(L, handleIdx);
   lua_remove(L, -2);
   return 1;
 }
 
-void parseNode(lua_State* L, plist_t node, int depth) {
+void parseNode(lua_State* L, plist_t node, int depth, int handleIdx) {
   char* name, *id, *bundleId, *iconType;
   plist_t kids, elements;
   int numChildren;
@@ -77,18 +83,20 @@ void parseNode(lua_State* L, plist_t node, int depth) {
     if (name != NULL) { SET_STRING(L, kItemName,name); }
     if (id != NULL) { SET_STRING(L, kItemId,id); }
     if (bundleId != NULL) { SET_STRING(L, kAppleBundleIdKey,bundleId); }
-    storeItemInRegistry(L, node);
+    storeItemInRegistry(L, handleIdx, node);
     if (lua_type(L, -2) != LUA_TTABLE) {
       luaL_error(L, "registry stack corruption before item ref set");
     }
     lua_setfield(L, -2, kItemRef);
+    lua_pushvalue(L, handleIdx);
+    lua_setfield(L, -2, kItemStoreHandle);
 
     // TODO: remove the duplication
     
     // If item is a folder, add the contained apps as a table.
     if (groupSize(kids) > 0) {
       lua_newtable(L);
-      flatPackArray(L, kids, depth+1);
+      flatPackArray(L, kids, depth+1, handleIdx);
       lua_setfield(L, -2, kItemsKey);
     }
 
@@ -109,7 +117,7 @@ break;
     
     numChildren = groupSize(node);
     for (i=0;i<numChildren;i++) {
-      parseNode(L, arrayElem(node, i), depth+1);
+      parseNode(L, arrayElem(node, i), depth+1, handleIdx);
     }
     
   default:
@@ -133,15 +141,15 @@ break;
 // unfortunately we get back all groups double wrapped, seems
 // apple was preparing for something that never came, if that
 // day does come this might need to go
-void flatPackArray(lua_State* L, plist_t node, int depth) {
+void flatPackArray(lua_State* L, plist_t node, int depth, int handleIdx) {
   int i;
   
   if (nodeType(node) == PLIST_ARRAY) {
     for (i=0;i<groupSize(node);i++) {
-      flatPackArray(L, arrayElem(node, i), depth);
+      flatPackArray(L, arrayElem(node, i), depth, handleIdx);
     }      
   } else {
-    parseNode(L, node, depth);
+    parseNode(L, node, depth, handleIdx);
   }
 }
 

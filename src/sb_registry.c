@@ -8,28 +8,37 @@
 #include "springboard_api.h"
 #include "springboard.h"
 
-static const char RegKey = 'k';
 static const char kNextRefKey[] = "__next_ref";
 
-static int uncheckedGetItemStore(lua_State* L) {
-  lua_pushlightuserdata(L, (void *)&RegKey);
-  lua_gettable(L, LUA_REGISTRYINDEX);
-  return 1;    
+void pushItemStoreHandle(lua_State* L)
+{
+  lua_newuserdatauv(L, 0, 1);
+  luaL_getmetatable(L, kItemStoreHandleID);
+  lua_setmetatable(L, -2);
+
+  lua_newtable(L);
+  lua_pushinteger(L, 1);
+  lua_setfield(L, -2, kNextRefKey);
+  lua_setiuservalue(L, -2, 1);
 }
 
-static int getItemStore(lua_State* L) {
-  uncheckedGetItemStore(L);
-  if (lua_isnoneornil(L, -1)) {
-    lua_pop(L, 1); 
-    lua_pushlightuserdata(L, (void *)&RegKey);
-    lua_newtable(L);
-    lua_pushinteger(L, 1);
-    lua_setfield(L, -2, kNextRefKey);
-    lua_settable(L, LUA_REGISTRYINDEX);
-    uncheckedGetItemStore(L); 
+int itemStoreHandle_gc(lua_State* L)
+{
+  if (lua_getiuservalue(L, 1, 1) != LUA_TTABLE) {
+    lua_pop(L, 1);
+    return 0;
   }
-  
-  return 1;
+
+  lua_pushnil(L);
+  while (lua_next(L, -2) != 0) {
+    if (lua_islightuserdata(L, -1)) {
+      plist_free((plist_t)lua_touserdata(L, -1));
+    }
+    lua_pop(L, 1);
+  }
+
+  lua_pop(L, 1);
+  return 0;
 }
 
 static void pushNextItemRef(lua_State* L)
@@ -51,25 +60,37 @@ static void pushNextItemRef(lua_State* L)
 }
 
 void storeItemInRegistry(lua_State* L,
+                         int handleIdx,
                          plist_t item) {
+  plist_t storedItem;
   const char* k;
-  
-  getItemStore(L);
+
+  handleIdx = lua_absindex(L, handleIdx);
+  if (lua_getiuservalue(L, handleIdx, 1) != LUA_TTABLE) {
+    luaL_error(L, "invalid item store handle");
+  }
+
   pushNextItemRef(L);
   if (lua_type(L, -2) != LUA_TTABLE) {
     luaL_error(L, "registry stack corruption before store");
   }
   k = lua_tostring(L, -1);
-  lua_pushlightuserdata(L, (void *)item);
+  storedItem = plist_copy(item);
+  lua_pushlightuserdata(L, (void *)storedItem);
   lua_setfield(L, -3, k);
   lua_remove(L, -2); // remove item store, leave ref on stack
 }
 
 plist_t retrieveItemFromRegistry(lua_State* L,
+                                 int handleIdx,
                                  const char* ref) {
   plist_t node = NULL;
-  
-  getItemStore(L);
+
+  handleIdx = lua_absindex(L, handleIdx);
+  if (lua_getiuservalue(L, handleIdx, 1) != LUA_TTABLE) {
+    luaL_error(L, "invalid item store handle");
+  }
+
   lua_getfield(L, -1, ref);
   node = lua_touserdata(L, -1);
   lua_pop(L, 2); // pop off item, store

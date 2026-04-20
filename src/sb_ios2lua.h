@@ -9,9 +9,9 @@
 #define groupSize(X) plist_array_get_size(X)
 #define dictSize(X) plist_dict_get_size(X)
 
-void parseNode(lua_State* L, plist_t node, int depth);
+void parseNode(lua_State* L, plist_t node, int depth, int handleIdx);
 char *getStringVal(plist_t dict, const char* key);
-void flatPackArray(lua_State* L, plist_t node, int depth);
+void flatPackArray(lua_State* L, plist_t node, int depth, int handleIdx);
 
 #define SET_STRING(L,K,V) lua_pushstring(L,V); lua_setfield(L,-2,K)
 

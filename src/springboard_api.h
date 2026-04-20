@@ -4,6 +4,7 @@
 struct lua_State;
 
 static char *const kLibraryRegKey = "springboard.registry";
+static char *const kItemStoreHandleID = "springboard.item_store";
 static char *const kSpringboardConnID = "idevice_conn";
 static const char* kClientId = "springboard";
 static const char* kConnectFail = "error communicating with device. ";
