@@ -255,7 +255,7 @@ Acceptance criteria:
 
 ### Phase 7: Rewrite Tests Around Fixtures
 
-Status: mostly complete
+Status: complete
 
 Already done:
 
@@ -269,13 +269,9 @@ Already done:
   - Lua-to-plist round-trip assertions
   - app/folder movement round-trip assertions
   - file provenance invariants
+  - missing name / missing bundle identifier edge cases
 - documented the split between offline tests and device-backed integration tests
 - made file-loaded layouts savable so offline round-trip tests do not require a device
-
-Still to do:
-
-- add edge-case fixtures for missing names / missing bundle identifiers
-- cover any supported write-path helpers that are still undocumented or untested
 
 Acceptance criteria:
 

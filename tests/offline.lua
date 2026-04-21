@@ -182,6 +182,34 @@ end)
 assert(unknown_ok == false)
 assert(unknown_err:match("layout%.reshape only supports app and folder items"))
 
+local edge_layout = springboard.load_plist("tests/fixtures/springboard-edge-cases.plist")
+assert(edge_layout.__source == "file")
+assert(type(edge_layout.save_plist) == "function")
+
+local missing_name = edge_layout:find_id("com.example.missing-name")
+assert(kind.of(missing_name) == "app")
+assert(missing_name.name == nil)
+assert(missing_name.bundleIdentifier == "com.example.missing-name")
+
+local missing_bundle = edge_layout:find("Missing Bundle")
+assert(kind.of(missing_bundle) == "app")
+assert(missing_bundle.id == "com.example.missing-bundle")
+assert(missing_bundle.bundleIdentifier == nil)
+
+local edge_folder = first_folder(edge_layout)
+assert(kind.of(edge_folder) == "folder")
+assert(edge_folder.name == "Fixture Folder")
+assert(edge_folder:count() == 2)
+assert(edge_folder.items[1].name == nil)
+assert(edge_folder.items[1].bundleIdentifier == "com.example.folder-child-no-name")
+assert(edge_folder.items[2].name == "Folder Child No Bundle")
+assert(edge_folder.items[2].bundleIdentifier == nil)
+
+local edge_opaque = edge_layout:opaque_items()
+assert(#edge_opaque == 1)
+assert(kind.of(edge_opaque[1]) == "widget")
+assert(edge_opaque[1].bundleIdentifier == nil)
+
 local roundtrip_path = "/tmp/springboard-offline-roundtrip.plist"
 local roundtrip = springboard.load_plist(fixture)
 roundtrip:save_plist(roundtrip_path)
@@ -206,5 +234,12 @@ if moved_folder and moved_apps[1] then
   assert(moved_reloaded_folder:count() == before + 1)
   assert(moved_reloaded_folder.items[#moved_reloaded_folder.items].id == moved_id)
 end
+
+edge_layout:save_plist(roundtrip_path)
+local edge_reloaded = springboard.load_plist(roundtrip_path)
+assert(edge_reloaded:find_id("com.example.missing-name").name == nil)
+assert(edge_reloaded:find("Missing Bundle").bundleIdentifier == nil)
+assert(first_folder(edge_reloaded).items[2].bundleIdentifier == nil)
+assert(kind.of(edge_reloaded:opaque_items()[1]) == "widget")
 
 os.remove(roundtrip_path)
