@@ -19,8 +19,9 @@ Completed:
 - explicit `kind` classification added
 - `Layout` / `Page` / `App` / `Folder` model introduced
 - folder children normalized to `folder.items`
-- widgets and stacks made explicit opaque item kinds
-- app-only reshape policy enforced
+- folders made movable as atomic containers
+- widgets, stacks, and unknown payloads made explicit opaque item kinds
+- reshape restricted to movable apps and folders
 - round-trip identity moved to opaque `ref`
 - per-layout ownership moved to hidden `__store` handle
 - docs rewritten to match the current API
@@ -73,13 +74,14 @@ Files:
 - `springboard/folder.lua`
 - `springboard/widget.lua`
 - `springboard/stack.lua`
+- `springboard/unknown.lua`
 - `springboard/kind.lua`
 
 Responsibilities:
 
 - define the model surface
 - provide traversal and search helpers
-- provide safe layout reshaping for app-only flows
+- provide safe layout reshaping for movable app/folder flows
 - make opaque unsupported items discoverable instead of silently dropping them
 
 ### Optional Features
@@ -104,6 +106,7 @@ Use these concepts:
 - `Folder`: named item containing child items
 - `Widget`: opaque preserved widget item
 - `Stack`: opaque preserved smart stack item
+- `Unknown`: opaque fallback for unrecognized item payloads
 
 Each parsed item should continue to have:
 
@@ -164,7 +167,8 @@ Delivered:
 - `Layout` object with `dock` and `pages`
 - `App` model replacing the old icon fiction
 - `folder.items`
-- explicit opaque `Widget` and `Stack` item kinds
+- folders movable as atomic containers
+- explicit opaque `Widget`, `Stack`, and `Unknown` item kinds
 
 Remaining later:
 
@@ -180,13 +184,13 @@ Delivered:
 - per-layout `__store` ownership
 - round-trip no longer depends on mutable display fields
 
-### Phase 4: Decide Widget And Stack Policy
+### Phase 4: Decide Opaque Item Policy
 
 Status: complete for now
 
 Decision:
 
-- widgets and smart stacks are opaque preserved items
+- widgets, smart stacks, and unknown payloads are opaque preserved items
 - they are discoverable via `visit_items`, `opaque_items`, and `has_opaque_items`
 - mutation helpers do not accept them
 
@@ -246,7 +250,8 @@ Already done:
   - app traversal/search
   - opaque item discovery
   - `ref` / `__store` invariants
-  - app-only reshape policy
+  - app/folder reshape policy
+  - unknown item parsing
 
 Still to do:
 

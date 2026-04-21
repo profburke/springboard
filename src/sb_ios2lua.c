@@ -51,6 +51,7 @@ int ios_plist_to_table(lua_State* L, plist_t layoutState) {
 void parseNode(lua_State* L, plist_t node, int depth, int handleIdx) {
   char* name, *id, *bundleId, *iconType;
   plist_t kids, elements;
+  int hasKids, hasElements;
   int numChildren;
   int i;
   
@@ -66,18 +67,18 @@ void parseNode(lua_State* L, plist_t node, int depth, int handleIdx) {
     bundleId = getStringVal(node, kAppleBundleIdKey);
     kids = dictEntry(node, kAppleIconListKey);
     elements = dictEntry(node, kAppleElementsKey);
+    hasKids = groupSize(kids) > 0;
+    hasElements = groupSize(elements) > 0;
     
     if (iconType != NULL && strcmp(iconType, "custom") == 0) {
       // Widgets and smart stacks are preserved as opaque items.
-      addToTable(L, groupSize(elements) > 0 ? kSmartStackTypeKey : kWidgetTypeKey);
+      addToTable(L, hasElements ? kSmartStackTypeKey : kWidgetTypeKey);
+    } else if (hasKids) {
+      addToTable(L, kFolderTypeKey);
+    } else if (name != NULL || id != NULL || bundleId != NULL) {
+      addToTable(L, kAppTypeKey);
     } else {
-      // Item is an app or a folder.
-      addToTable(L, groupSize(kids) > 0 ? kFolderTypeKey : kAppTypeKey);
-    }
-
-    if (name == NULL && id == NULL) {
-      lua_pushstring(L, "unexpected value reading layout!");
-      lua_error(L);
+      addToTable(L, kUnknownTypeKey);
     }
     
     if (name != NULL) { SET_STRING(L, kItemName,name); }
@@ -94,7 +95,7 @@ void parseNode(lua_State* L, plist_t node, int depth, int handleIdx) {
     // TODO: remove the duplication
     
     // If item is a folder, add the contained apps as a table.
-    if (groupSize(kids) > 0) {
+    if (hasKids) {
       lua_newtable(L);
       flatPackArray(L, kids, depth+1, handleIdx);
       lua_setfield(L, -2, kItemsKey);

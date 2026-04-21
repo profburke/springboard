@@ -62,9 +62,9 @@ Methods:
 
 Mutation:
 
-- `reshape(flat_apps)`
+- `reshape(flat_items)`
 
-`reshape` only accepts apps.
+`reshape` accepts apps and folders. Folders move as atomic containers.
 
 ### Item Kinds
 
@@ -74,8 +74,9 @@ Mutation:
 
 `Folder`
 
-- first-class container
+- first-class movable container
 - children live in `folder.items`
+- contents are not editable through a supported helper yet
 
 `Widget`
 
@@ -84,6 +85,10 @@ Mutation:
 `Stack`
 
 - opaque preserved item
+
+`Unknown`
+
+- opaque preserved fallback for unrecognized item payloads
 
 ### Hidden Internal Fields
 

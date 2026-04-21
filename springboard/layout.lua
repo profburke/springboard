@@ -51,11 +51,15 @@ local function contains_or_matches(value, pat)
       or string.find(value, pat) ~= nil
 end
 
-local function assert_apps_only(items, operation)
+local function is_movable_container_item(value)
+   return kind.is(value, "app") or kind.is(value, "folder")
+end
+
+local function assert_movable_container_items(items, operation)
    for idx, value in ipairs(items) do
-      if not kind.is(value, "app") then
+      if not is_movable_container_item(value) then
          error(string.format(
-            "%s only supports app items; found %s at index %d",
+            "%s only supports app and folder items; found %s at index %d",
             operation,
             kind.of(value),
             idx
@@ -162,7 +166,7 @@ layout.opaque_items = function(tab)
    local result = {}
 
    tab:visit_items(function(item)
-      if kind.is(item, "widget") or kind.is(item, "stack") then
+      if kind.is(item, "widget") or kind.is(item, "stack") or kind.is(item, "unknown") then
          insert(result, item)
       end
    end)
@@ -185,7 +189,7 @@ layout.reshape = function(tab, fillPercent)
    local count = 1
    local insert = table.insert
 
-   assert_apps_only(tab, "layout.reshape")
+   assert_movable_container_items(tab, "layout.reshape")
 
    for i, value in ipairs(tab) do
       if i < dockMax then

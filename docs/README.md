@@ -9,7 +9,7 @@ It is not a generic icon library. The current model is:
 - `Page`
 - `App`
 - `Folder`
-- `Widget` and `Stack` as opaque preserved items
+- `Widget`, `Stack`, and `Unknown` as opaque preserved items
 
 ## Current Status
 
@@ -26,6 +26,7 @@ What does not work yet:
 
 - first-class widget editing
 - first-class smart stack editing
+- unknown item editing
 - safe generic mutation helpers for opaque items
 - a real swap/move editing API
 
@@ -88,7 +89,10 @@ conn:disconnect()
 - `items`
 - `__store`
 
-`Widget` / `Stack`:
+Folders are movable as atomic containers, but their contents are not editable
+through a supported helper yet.
+
+`Widget` / `Stack` / `Unknown`:
 
 - preserved as opaque items
 - include `ref` and `__store`
@@ -115,10 +119,11 @@ All-item helpers:
 
 Mutation helper:
 
-- `layout.reshape(flat_apps)`
+- `layout.reshape(flat_items)`
 
-`layout.reshape(...)` is intentionally app-only. Passing widgets, stacks,
-folders, or other non-app items is an error.
+`layout.reshape(...)` accepts apps and folders. Folders move as atomic
+containers. Passing widgets, stacks, unknown items, or other non-movable items
+is an error.
 
 ## Device API
 
@@ -145,9 +150,9 @@ Each parsed item gets an opaque `ref` like `item:42`.
 That `ref` is what round-trip serialization uses to recover the original plist
 node. It no longer depends on mutable fields like `name` or `id`.
 
-## Opaque Widget/Stack Policy
+## Opaque Item Policy
 
-Widgets and smart stacks are currently:
+Widgets, smart stacks, and unknown items are currently:
 
 - parsed as explicit item kinds
 - preserved during round-trip
@@ -156,6 +161,9 @@ Widgets and smart stacks are currently:
 - not supported by mutation helpers
 
 That is deliberate. First-class support needs more research.
+
+See [`springboard-items.md`](/Users/matt/Projects/ios-icons/docs/springboard-items.md)
+for the current item taxonomy and open questions.
 
 ## Tests
 

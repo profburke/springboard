@@ -13,5 +13,20 @@ local folder = {}
 folder.__meta = folder_mt
 folder_mt.__index = folder
 
+folder.support = function()
+   return "movable"
+end
+
+folder.is_opaque = function()
+   return false
+end
+
+folder.is_editable = function()
+   return false
+end
+
+folder.is_movable = function()
+   return true
+end
 
 return folder

@@ -26,6 +26,7 @@ static char *const kPagesKey = "pages";
 static char *const kAppTypeKey = "springboard.app";
 static char *const kSmartStackTypeKey = "springboard.stack";
 static char *const kWidgetTypeKey = "springboard.widget";
+static char *const kUnknownTypeKey = "springboard.unknown";
 
 int ios_plist_to_table(lua_State* L, plist_t layoutState);
 plist_t ios_table_to_plist(lua_State* L);

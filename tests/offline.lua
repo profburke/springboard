@@ -43,7 +43,7 @@ layout:visit_items(function(item)
     if #item.items > 0 then
       assert(type(item.items[1].ref) == "string")
     end
-  elseif kind.is(item, "widget") or kind.is(item, "stack") then
+  elseif kind.is(item, "widget") or kind.is(item, "stack") or kind.is(item, "unknown") then
     saw_opaque = true
     assert(item:support() == "opaque")
     assert(item:is_opaque() == true)
@@ -70,10 +70,48 @@ if a and b and c then
   assert(type(reshaped.pages) == "table")
 end
 
+local folder
+layout:visit_items(function(item)
+  if not folder and kind.is(item, "folder") then
+    folder = item
+  end
+end)
+
+if a and folder then
+  local reshaped = layout.reshape({ a, folder })
+  assert(kind.of(reshaped) == "layout")
+  assert(kind.of(reshaped.dock[2]) == "folder")
+  assert(reshaped.dock[2].items == folder.items)
+  assert(folder:support() == "movable")
+  assert(folder:is_movable() == true)
+  assert(folder:is_editable() == false)
+  assert(folder:is_opaque() == false)
+end
+
 local ok, err = pcall(function()
   layout.reshape({ apps[1], opaque[1] })
 end)
 if opaque[1] then
   assert(ok == false)
-  assert(err:match("layout%.reshape only supports app items"))
+  assert(err:match("layout%.reshape only supports app and folder items"))
 end
+
+local unknown = require "springboard.unknown"
+local unknown_item = setmetatable({ ref = "synthetic:unknown" }, unknown.__meta)
+assert(kind.of(unknown_item) == "unknown")
+assert(unknown_item:support() == "opaque")
+assert(unknown_item:is_opaque() == true)
+assert(unknown_item:is_editable() == false)
+
+local unknown_layout = springboard.load_plist("tests/fixtures/springboard-unknown-item.plist")
+local parsed_unknown = unknown_layout.dock[1]
+assert(kind.of(parsed_unknown) == "unknown")
+assert(type(parsed_unknown.ref) == "string")
+assert(type(parsed_unknown.__store) == "userdata")
+assert(unknown_layout:has_opaque_items() == true)
+
+local unknown_ok, unknown_err = pcall(function()
+  layout.reshape({ parsed_unknown })
+end)
+assert(unknown_ok == false)
+assert(unknown_err:match("layout%.reshape only supports app and folder items"))
