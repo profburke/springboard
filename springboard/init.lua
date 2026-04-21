@@ -1,7 +1,38 @@
-local ios = require "springboard.iconlib"
--- Oh hi, I've just been cleaning up. like what I've
--- done with the place? oh the code? it's out back.
+local iconlib = require "springboard.iconlib"
 
--- springboard: layout management via libimobiledevice.
--- see README.md for instructions.
-return ios
+local springboard = {
+   connect = iconlib.connect,
+   ios_errno = iconlib.ios_errno,
+   load_plist = iconlib.load_plist,
+
+   iconlib = iconlib,
+
+   kind = require "springboard.kind",
+   layout = require "springboard.layout",
+   page = require "springboard.page",
+   app = require "springboard.app",
+   folder = require "springboard.folder",
+   widget = require "springboard.widget",
+   stack = require "springboard.stack",
+   unknown = require "springboard.unknown",
+}
+
+springboard.features = {
+   cache = function()
+      return require "springboard.features.cache"
+   end,
+
+   graphics = function()
+      return require "springboard.features.graphics"
+   end,
+
+   image = function()
+      return require "springboard.features.image"
+   end,
+
+   itunes = function()
+      return require "springboard.features.itunes"
+   end,
+}
+
+return springboard

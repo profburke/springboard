@@ -15,6 +15,17 @@
 - loads a saved SpringBoard plist from disk into a file-sourced `Layout`
 - intended for fixtures, inspection, and research
 
+Top-level model modules:
+
+- `springboard.kind`
+- `springboard.layout`
+- `springboard.page`
+- `springboard.app`
+- `springboard.folder`
+- `springboard.widget`
+- `springboard.stack`
+- `springboard.unknown`
+
 ### Connection
 
 `conn:layout()` / `conn:get_layout()`
@@ -126,12 +137,12 @@ These exist for round-trip identity/ownership and are not meant as public API:
 
 ### Optional Features
 
-Optional modules:
+Optional feature loaders:
 
-- `springboard.features.graphics`
-- `springboard.features.image`
-- `springboard.features.itunes`
-- `springboard.features.cache`
+- `springboard.features.graphics()`
+- `springboard.features.image()`
+- `springboard.features.itunes()`
+- `springboard.features.cache()`
 
 The core library does not load optional JSON, socket, cache, or GraphicsMagick
 dependencies.

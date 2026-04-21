@@ -34,6 +34,7 @@ Completed:
 - `set_layout` rejects file-loaded layouts unless forced
 - docs rewritten to match the current API
 - offline fixture-backed tests added
+- top-level `springboard` module made into a Lua facade over the C bridge and model modules
 
 Still weak:
 

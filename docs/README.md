@@ -79,6 +79,18 @@ conn:disconnect()
 
 ## Data Model
 
+The top-level `springboard` module is the public facade. It exposes the device
+API plus core model modules:
+
+- `springboard.kind`
+- `springboard.layout`
+- `springboard.page`
+- `springboard.app`
+- `springboard.folder`
+- `springboard.widget`
+- `springboard.stack`
+- `springboard.unknown`
+
 `Layout` fields:
 
 - `dock`: a `Page`
@@ -186,12 +198,12 @@ not the normal import-and-write workflow.
 The base `springboard` module does not load optional image analysis, iTunes
 lookup, cache, JSON, socket, or GraphicsMagick dependencies.
 
-Optional modules live under `springboard.features.*`:
+Optional modules are loaded through explicit feature functions:
 
-- `springboard.features.graphics`
-- `springboard.features.image`
-- `springboard.features.itunes`
-- `springboard.features.cache`
+- `springboard.features.graphics()`
+- `springboard.features.image()`
+- `springboard.features.itunes()`
+- `springboard.features.cache()`
 
 `conn:app_image(app)` stays in the core API because it is a direct
 SpringBoardServices capability. Color analysis and iTunes metadata are optional
@@ -200,7 +212,8 @@ features.
 Example:
 
 ```lua
-local graphics = require "springboard.features.graphics"
+local springboard = require "springboard"
+local graphics = springboard.features.graphics()
 
 local layout = conn:layout()
 graphics.attach(layout, conn)

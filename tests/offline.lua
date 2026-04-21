@@ -2,9 +2,18 @@ package.path = './?.lua;./?/init.lua;' .. package.path
 package.cpath = './?.so;./?/?.so;' .. package.cpath
 
 local springboard = require "springboard"
-local cache = require "springboard.features.cache"
-local image = require "springboard.features.image"
-local kind = require "springboard.kind"
+local cache = springboard.features.cache()
+local image = springboard.features.image()
+local kind = springboard.kind
+
+assert(type(springboard.connect) == "function")
+assert(type(springboard.load_plist) == "function")
+assert(type(springboard.iconlib) == "table")
+assert(springboard.kind == require "springboard.kind")
+assert(springboard.layout == require "springboard.layout")
+assert(springboard.app == require "springboard.app")
+assert(type(springboard.features.graphics) == "function")
+assert(type(springboard.features.itunes) == "function")
 
 local function collect_kinds(layout)
   local counts = {}
