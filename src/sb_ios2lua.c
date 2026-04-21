@@ -40,7 +40,7 @@ int ios_plist_to_table(lua_State* L, plist_t layoutState) {
   lua_setfield(L, layoutIdx, kPagesKey);
 
   lua_pushvalue(L, handleIdx);
-  lua_setfield(L, layoutIdx, kItemStoreHandle);
+  lua_setfield(L, layoutIdx, kStoreHandleKey);
 
   lua_remove(L, rootIdx);
   lua_remove(L, handleIdx);
@@ -89,7 +89,7 @@ void parseNode(lua_State* L, plist_t node, int depth, int handleIdx) {
     }
     lua_setfield(L, -2, kItemRef);
     lua_pushvalue(L, handleIdx);
-    lua_setfield(L, -2, kItemStoreHandle);
+    lua_setfield(L, -2, kStoreHandleKey);
 
     // TODO: remove the duplication
     

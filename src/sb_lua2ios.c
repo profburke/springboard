@@ -59,7 +59,7 @@ plist_t luaToStoredPListItem(lua_State* L)
   ref = lua_tostring(L, -1);
   lua_pop(L, 1);
 
-  lua_getfield(L, -1, kItemStoreHandle);
+  lua_getfield(L, -1, kStoreHandleKey);
   handleType = lua_type(L, -1);
   if (handleType != LUA_TUSERDATA) {
     luaL_error(L, "missing item store handle for ref=%s", ref);
