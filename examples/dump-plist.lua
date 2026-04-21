@@ -13,5 +13,5 @@ if (not status) then
    os.exit(1)
 end
 
-layout = conn:layout()
-layout:save_plist 'springboard.plist'
+conn:save_raw_layout_plist 'springboard.plist'
+conn:disconnect()

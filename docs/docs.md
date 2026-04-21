@@ -20,6 +20,10 @@
 
 - fetches the current device layout
 
+`conn:save_raw_layout_plist(path)`
+
+- writes the raw SpringBoardServices layout plist to disk without parsing
+
 `conn:set_layout(layout)`
 
 - writes the given layout back to the device

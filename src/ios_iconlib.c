@@ -27,6 +27,7 @@ static const luaL_Reg sbconn_methods[] = {
   { "disconnect", ios_disconnect }, 
   { "layout", ios_get_layout }, 
   { "get_layout", ios_get_layout }, 
+  { "save_raw_layout_plist", ios_save_raw_layout_plist },
   { "set_layout", ios_set_layout }, 
   { "app_image", ios_app_imagedata },
   { "wallpaper", ios_wallpaper },

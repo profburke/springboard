@@ -17,6 +17,7 @@ What works:
 
 - connect to a device and fetch the current layout
 - load a saved plist fixture from disk
+- save a raw device layout plist without parsing
 - traverse/search apps in a layout
 - save a modified layout back to plist
 - write a modified layout back to a device
@@ -131,6 +132,7 @@ Connection methods:
 
 - `conn:layout()`
 - `conn:get_layout()`
+- `conn:save_raw_layout_plist(path)`
 - `conn:set_layout(layout)`
 - `conn:app_image(app)`
 - `conn:wallpaper()`
@@ -149,6 +151,15 @@ Each parsed item gets an opaque `ref` like `item:42`.
 
 That `ref` is what round-trip serialization uses to recover the original plist
 node. It no longer depends on mutable fields like `name` or `id`.
+
+## Raw Plist Dumps
+
+Use `conn:save_raw_layout_plist(path)` when you need a research/debug backup of
+exactly what SpringBoardServices returned.
+
+Do not use `layout:save_plist(path)` for raw capture. That method saves the
+current Lua model back to plist and can normalize structures the model does not
+fully understand yet.
 
 ## Opaque Item Policy
 

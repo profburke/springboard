@@ -1,7 +1,10 @@
 .DS_Store
 *~
+\#*\#
+.\#*
 *.o
 *.so
+springboard.plist
 .iTunesJson/
 .iTunesJson.old/
 Prompt.md

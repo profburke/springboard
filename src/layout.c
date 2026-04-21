@@ -52,6 +52,33 @@ int ios_get_layout(lua_State *L)
   return rc;
 }
 
+int ios_save_raw_layout_plist(lua_State *L)
+{
+  int rc, i;
+  const char* path;
+  plist_t layoutState;
+
+  path = luaL_checkstring(L, -1);
+  lua_pop(L, 1);
+
+  SBConnection* c = popConnection(L);
+  
+  rc = -1;
+  for (i=0; rc != SBSERVICES_E_SUCCESS; i++)
+  {
+    rc = sbservices_get_icon_state(
+          c->sbClient, &layoutState,
+          kSpringboardInfoVersion);
+    if (i == kPullRetries) { luaL_error(L, "connect error %d", rc); }
+  }
+
+  if (savePList(layoutState, path)) {
+    luaL_error(L, "failed to save raw layout plist");
+  }
+
+  return 0;
+}
+
 int ios_set_layout(lua_State *L)
 {
   int rc;
@@ -129,4 +156,3 @@ ios_wallpaper(lua_State* L)
 
   return 1;
 }
-
