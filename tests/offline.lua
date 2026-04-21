@@ -12,6 +12,7 @@ assert(kind.of(layout) == "layout")
 assert(type(layout.dock) == "table")
 assert(type(layout.pages) == "table")
 assert(type(layout.__store) == "userdata")
+assert(layout.__source == "file")
 assert(#layout.dock > 0)
 
 local apps = layout:flatten()
@@ -136,6 +137,7 @@ assert(unknown_item:is_editable() == false)
 
 local unknown_layout = springboard.load_plist("tests/fixtures/springboard-unknown-item.plist")
 local parsed_unknown = unknown_layout.dock[1]
+assert(unknown_layout.__source == "file")
 assert(kind.of(parsed_unknown) == "unknown")
 assert(type(parsed_unknown.ref) == "string")
 assert(type(parsed_unknown.__store) == "userdata")

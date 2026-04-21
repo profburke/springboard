@@ -19,6 +19,9 @@ static char *const kItemId = "id";
 static char *const kItemName = "name";
 static char *const kItemRef = "ref";
 static char *const kStoreHandleKey = "__store";
+static char *const kSourceKey = "__source";
+static char *const kSourceDevice = "device";
+static char *const kSourceFile = "file";
 static char *const kItemsKey = "items";
 static char *const kLayoutTypeKey = "springboard.layout";
 static char *const kPageTypeKey = "springboard.page";
@@ -28,7 +31,7 @@ static char *const kSmartStackTypeKey = "springboard.stack";
 static char *const kWidgetTypeKey = "springboard.widget";
 static char *const kUnknownTypeKey = "springboard.unknown";
 
-int ios_plist_to_table(lua_State* L, plist_t layoutState);
+int ios_plist_to_table(lua_State* L, plist_t layoutState, const char* source);
 plist_t ios_table_to_plist(lua_State* L);
 
 void pushItemStoreHandle(lua_State* L);

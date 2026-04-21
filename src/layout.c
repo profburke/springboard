@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -41,7 +42,7 @@ int ios_get_layout(lua_State *L)
     if (i == kPullRetries) { luaL_error(L, "connect error %d", rc); }
   }
   
-  if ( (rc = ios_plist_to_table(L, layoutState)) != 1) {
+  if ( (rc = ios_plist_to_table(L, layoutState, kSourceDevice)) != 1) {
     luaL_error(L, "convert error %d", rc);
   }
   
@@ -82,14 +83,30 @@ int ios_save_raw_layout_plist(lua_State *L)
 int ios_set_layout(lua_State *L)
 {
   int rc;
+  int layoutIdx, force;
   plist_t layoutState;
 
   // grab connection info (param 2)
-  luaL_checkudata(L, -2, kSpringboardConnID);
-  lua_pushvalue(L, -2);
+  luaL_checkudata(L, 1, kSpringboardConnID);
+  layoutIdx = 2;
+  force = 0;
+
+  if (lua_istable(L, 3)) {
+    lua_getfield(L, 3, "force");
+    force = lua_toboolean(L, -1);
+    lua_pop(L, 1);
+  }
+
+  lua_getfield(L, layoutIdx, kSourceKey);
+  if (!force && lua_isstring(L, -1) && strcmp(lua_tostring(L, -1), kSourceFile) == 0) {
+    luaL_error(L, "refusing to write file-loaded layout without force=true");
+  }
+  lua_pop(L, 1);
+
+  lua_pushvalue(L, 1);
   SBConnection* c = popConnection(L);
   lua_pop(L, 1);
-  lua_remove(L, -2); // leaving layout still at top
+  lua_pushvalue(L, layoutIdx);
 
   layoutState = ios_table_to_plist(L);
   rc = sbservices_set_icon_state(c->sbClient, layoutState);
@@ -98,7 +115,7 @@ int ios_set_layout(lua_State *L)
     luaL_error(L, "%s, code=%d", kSetLayoutErr, rc);
   }
 
-  lua_pop(L, 1); // conn
+  lua_pop(L, 1); // layout copy
   return 0;
 }
 

@@ -114,5 +114,5 @@ ios_load_layout_plist(lua_State *L)
 
   lua_pop(L, 1);
 
-  return ios_plist_to_table(L, layoutState);
+  return ios_plist_to_table(L, layoutState, kSourceFile);
 }

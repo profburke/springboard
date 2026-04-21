@@ -73,6 +73,7 @@ conn:disconnect()
 - `dock`: a `Page`
 - `pages`: array of `Page`
 - `__store`: hidden internal handle used for round-trip ownership
+- `__source`: `"device"` or `"file"`
 
 `App` fields commonly present:
 
@@ -145,6 +146,7 @@ Connection methods:
 - `conn:get_layout()`
 - `conn:save_raw_layout_plist(path)`
 - `conn:set_layout(layout)`
+- `conn:set_layout(layout, { force = true })`
 - `conn:app_image(app)`
 - `conn:wallpaper()`
 - `conn:devicename()`
@@ -155,6 +157,9 @@ Library methods:
 - `springboard.connect([udid])`
 - `springboard.ios_errno()`
 - `springboard.load_plist(path)`
+
+`springboard.load_plist(path)` is for fixtures, inspection, and research. It is
+not the normal import-and-write workflow.
 
 ## Round-Trip Identity
 
@@ -171,6 +176,21 @@ exactly what SpringBoardServices returned.
 Do not use `layout:save_plist(path)` for raw capture. That method saves the
 current Lua model back to plist and can normalize structures the model does not
 fully understand yet.
+
+## Write Safety
+
+Layouts fetched from a device have `layout.__source == "device"`. Layouts loaded
+from disk have `layout.__source == "file"`.
+
+`conn:set_layout(layout)` refuses file-loaded layouts by default. If you really
+intend to restore or experiment with a local plist, call:
+
+```lua
+conn:set_layout(layout, { force = true })
+```
+
+That force flag is deliberately noisy. A local plist can be stale, edited,
+device-specific, or structurally invalid for the connected phone.
 
 ## Opaque Item Policy
 

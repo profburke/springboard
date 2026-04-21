@@ -12,7 +12,8 @@
 
 `springboard.load_plist(path)`
 
-- loads a saved SpringBoard plist from disk into a `Layout`
+- loads a saved SpringBoard plist from disk into a file-sourced `Layout`
+- intended for fixtures, inspection, and research
 
 ### Connection
 
@@ -27,6 +28,12 @@
 `conn:set_layout(layout)`
 
 - writes the given layout back to the device
+- refuses file-sourced layouts unless forced
+
+`conn:set_layout(layout, { force = true })`
+
+- writes a file-sourced layout intentionally
+- unsafe unless the plist is known-good for the target device
 
 `conn:app_image(app)`
 
@@ -50,6 +57,7 @@ Fields:
 
 - `dock`
 - `pages`
+- `__source`
 
 Methods:
 
@@ -108,3 +116,4 @@ These exist for round-trip identity/ownership and are not meant as public API:
 
 - `ref`
 - `__store`
+- `__source`

@@ -12,7 +12,7 @@
 #include "sb_ios2lua.h"
 
 // Converts the passed in plist into a Layout table.
-int ios_plist_to_table(lua_State* L, plist_t layoutState) {
+int ios_plist_to_table(lua_State* L, plist_t layoutState, const char* source) {
   int handleIdx, rootIdx, layoutIdx, pagesIdx;
   int pageCount, i;
 
@@ -41,6 +41,10 @@ int ios_plist_to_table(lua_State* L, plist_t layoutState) {
 
   lua_pushvalue(L, handleIdx);
   lua_setfield(L, layoutIdx, kStoreHandleKey);
+  if (source != NULL) {
+    lua_pushstring(L, source);
+    lua_setfield(L, layoutIdx, kSourceKey);
+  }
 
   lua_remove(L, rootIdx);
   lua_remove(L, handleIdx);

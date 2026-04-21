@@ -26,6 +26,8 @@ Completed:
 - reshape restricted to movable apps and folders
 - round-trip identity moved to opaque `ref`
 - per-layout ownership moved to hidden `__store` handle
+- layout provenance added via `__source`
+- `set_layout` rejects file-loaded layouts unless forced
 - docs rewritten to match the current API
 - offline fixture-backed tests added
 
