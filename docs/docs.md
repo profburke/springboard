@@ -89,18 +89,23 @@ provides an explicit limit. No folder limit is enforced by default.
 
 `App`
 
-- first-class editable item
+- first-class move-only item
+- field editing, creation, and deletion are unsupported
 
 `Folder`
 
 - first-class movable container
 - children live in a flat `folder.items` list
 - apps can move into and out of folders
+- creation and deletion are unsupported
+- empty folders are allowed
 - `count()` returns the number of contained items
 
 `Widget`
 
 - opaque preserved item
+- research indicates widgets can move once grid-size validation exists
+- `gridSize` values include `small`, `medium`, `large`, and iPad-only `xtralarge`
 
 `Stack`
 

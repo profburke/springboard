@@ -22,6 +22,10 @@ Completed:
 - folders made movable as atomic containers
 - apps can move into folders and back out to pages
 - folder capacity validation is opt-in because the real limits vary
+- apps and web clips are move-only; field editing/create/delete are unsupported
+- folders are move-only containers; create/delete are unsupported and empty folders are allowed
+- widget movement is plausible once `gridSize`/slot validation exists
+- App Clips are out of scope unless raw SpringBoard fixtures prove otherwise
 - widgets, stacks, and unknown payloads made explicit opaque item kinds
 - reshape restricted to movable apps and folders
 - round-trip identity moved to opaque `ref`
@@ -139,6 +143,7 @@ Avoid regressing into:
 - treating every item as an “icon”
 - identity derived from mutable fields like `name .. "." .. id`
 - pretending opaque items are editable when they are not
+- allowing create/delete/edit operations without plist evidence
 
 ## Phase Status
 
@@ -181,6 +186,7 @@ Delivered:
 Remaining later:
 
 - decide how web clips should be represented if they need distinct behavior
+- represent widget movement safely using `gridSize`
 
 ### Phase 3: Rebuild Serialization Identity
 

@@ -11,25 +11,28 @@ Current support:
 - searchable by name or id
 - movable by `layout.reshape`
 - usable with `conn:app_image(app)`
+- move-only; editing fields is unsupported
+- creating or deleting apps is unsupported
 
 Open questions:
 
-- Which fields are safe to edit besides position?
 - Are offloaded/restoring apps distinguishable from normal apps?
-- Should App Store app, system app, and app clip entries share one model?
+- Should system apps and App Store apps share one model permanently?
 
 ## Web Clip
 
 Current support:
 
 - probably parsed as `App` when it looks app-like
+- move-only if represented
+- editing fields is unsupported
+- creating or deleting web clips is unsupported
 
 Open questions:
 
 - Which plist fields reliably distinguish web clips from apps?
 - Do web clips support image retrieval through SpringBoardServices?
 - Should web clips become a separate `webclip` kind or remain `App` variants?
-- What fields are safe to edit without breaking launch behavior?
 
 ## Folder
 
@@ -43,14 +46,13 @@ Current support:
 - apps move out of folders by moving them to a target page or dock
 - capacity is not enforced by default
 - callers may use `layout:validate({ folder_capacity = N })` when targeting a known limit
+- creating or deleting folders is unsupported
+- empty folders are allowed
 
 Open questions:
 
 - What are the exact capacity rules by iOS version and device class?
-- Can folders be created from scratch?
-- Can folders be deleted safely?
 - Can folder names be edited safely?
-- What should happen to empty folders?
 
 ## Widget
 
@@ -59,15 +61,16 @@ Current support:
 - opaque preserved item
 - discoverable through `visit_items` and `opaque_items`
 - not accepted by mutation helpers
+- research indicates widgets are safe to move if slot size is respected
+- creating, deleting, and editing widgets is unsupported
+- `gridSize` defines widget slot size: `small`, `medium`, `large`, or `xtralarge` on iPad
 
 Open questions:
 
 - Which fields define identity, size, extension kind, and host app?
-- Which widget families map to which layout slot sizes?
-- Can widgets be moved freely between pages?
-- Can widgets be created from scratch?
 - Can widget configuration be preserved after movement?
 - Are there widget records that do not have bundle identifiers?
+- How should layout slot validation model `gridSize`?
 
 ## Smart Stack
 
@@ -102,14 +105,12 @@ Open questions:
 
 Current support:
 
-- likely falls through to `App` or `Unknown`, depending on plist shape
+- out of scope for SpringBoard layout modeling
+- research indicates App Clips appear in App Library, not SpringBoard layout state
 
 Open questions:
 
-- What fields distinguish App Clips from apps?
-- Are App Clips persisted in the same layout plist across reboot/sync?
-- Are they safely movable?
-- Do they support image retrieval through the same API?
+- Revisit only if a raw SpringBoard plist fixture proves otherwise.
 
 ## System Pseudo-Item
 

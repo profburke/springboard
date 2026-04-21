@@ -83,6 +83,9 @@ conn:disconnect()
 - `ref`
 - `__store`
 
+Apps are move-only. Editing fields, creating apps, and deleting apps are not
+supported.
+
 `Folder` fields:
 
 - `name`
@@ -98,12 +101,18 @@ Folder capacity is not enforced by default. Reports vary by iOS version and
 device class. Use `layout:validate({ folder_capacity = N })` if you want to
 apply a known limit for a specific target.
 
+Creating and deleting folders is unsupported. Empty folders are allowed.
+
 `Widget` / `Stack` / `Unknown`:
 
 - preserved as opaque items
 - include `ref` and `__store`
 - report `:support() == "opaque"`
 - report `:is_editable() == false`
+
+Research indicates widgets should be movable once grid-size validation exists.
+Widget `gridSize` values include `small`, `medium`, `large`, and iPad-only
+`xtralarge`.
 
 ## Layout Helpers
 
