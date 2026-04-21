@@ -2,53 +2,53 @@
 
 ## Goal
 
-Turn this repo from a partially recovered prototype into a maintainable library for:
+Keep turning this repo into a maintainable `springboard` library for:
 
-- reading Springboard layout data from iOS devices
+- reading SpringBoard layout data from iOS devices
 - manipulating that layout in Lua
-- writing the modified layout back safely
+- writing modified layout data back safely
 
-This plan assumes the current priority is correctness and code structure, not new end-user features.
+The priority is still correctness, explicit behavior, and testability. Not feature sprawl.
+
+## Current State
+
+Completed:
+
+- project/library rename to `springboard`
+- fake global `type` override removed
+- explicit `kind` classification added
+- `Layout` / `Page` / `App` / `Folder` model introduced
+- folder children normalized to `folder.items`
+- widgets and stacks made explicit opaque item kinds
+- app-only reshape policy enforced
+- round-trip identity moved to opaque `ref`
+- per-layout ownership moved to hidden `__store` handle
+- docs rewritten to match the current API
+- offline fixture-backed tests added
+
+Still weak:
+
+- widgets and smart stacks are preserved but not first-class
+- optional feature modules are still mixed into the main package surface
+- cache helpers still deserve a security and API cleanup
+- repo layout still has historical clutter and archive material in active view
+- device-backed integration coverage is still thin and manual
 
 ## Non-Goals
 
 - building a GUI first
-- expanding optional features like iTunes metadata or color analysis before the core model is sound
-- preserving every historical file in the active source tree
+- first-class widget/stack editing before the data is understood
+- broad backward compatibility with `ios-icons`
+- expanding optional metadata/image features before the core is tighter
 
-## Current Problems
+## Current Architecture
 
-### Structural
-
-- The Lua object model is fake-polymorphic and depends on globally overriding `type`.
-- The project conflates app, icon image, and Springboard item.
-- Widgets and smart stacks are detected but not cleanly modeled or round-tripped.
-- Serialization depends on a weak registry lookup based on mutable fields.
-
-### Correctness
-
-- `bundleIdentifier` is populated with the wrong value in the C bridge.
-- `ios-icons/image.lua` contains an early `return math`, leaving most of the file dead.
-- `ios-icons/image.lua` leaks globals in `hsv`, `color`, and `is_dark`, making behavior order-dependent.
-- `save_load.c` has broken buffer allocation and termination logic.
-- Cache helpers shell out unsafely and assume path-safe inputs.
-
-### Project Hygiene
-
-- The repo root mixes active source, fixtures, scratch files, and archive material.
-- Documentation describes stale install and usage flows.
-- Tests depend too heavily on a live device and do not protect core round-trip behavior.
-
-## Target Architecture
-
-The cleanup should drive the codebase toward four layers.
-
-### 1. Device Bridge
+### Device Bridge
 
 Files:
 
 - `src/comms.c`
-- `src/icons.c`
+- `src/layout.c`
 - `src/sb_ios2lua.c`
 - `src/sb_lua2ios.c`
 - `src/sb_registry.c`
@@ -57,208 +57,146 @@ Files:
 Responsibilities:
 
 - connect to device services
-- fetch Springboard plist data
-- convert plist to Lua data
-- convert Lua data back to plist
-- preserve enough identity to write changes back safely
+- fetch SpringBoard plist data
+- convert plist to Lua model objects
+- convert Lua model objects back to plist
+- preserve round-trip identity via `ref` and `__store`
 
-### 2. Core Model
+### Core Model
 
-Proposed location:
+Files:
 
-- `ios-icons/model/`
+- `springboard/init.lua`
+- `springboard/layout.lua`
+- `springboard/page.lua`
+- `springboard/app.lua`
+- `springboard/folder.lua`
+- `springboard/widget.lua`
+- `springboard/stack.lua`
+- `springboard/kind.lua`
 
 Responsibilities:
 
-- define layout, page, folder, app item, widget item, stack item
+- define the model surface
 - provide traversal and search helpers
-- provide mutation helpers
-- avoid device-specific side effects
+- provide safe layout reshaping for app-only flows
+- make opaque unsupported items discoverable instead of silently dropping them
 
-### 3. Optional Features
+### Optional Features
 
-Proposed location:
+Current files:
 
-- `ios-icons/features/`
+- `springboard/image.lua`
+- `springboard/graphics.lua`
+- `springboard/cache.lua`
+- `springboard/itunes.lua`
 
-Candidates:
-
-- image fetching wrappers
-- icon color analysis
-- iTunes lookups
-- file-backed caches
-
-These should layer on top of the core model, not shape it.
-
-### 4. Compatibility Layer
-
-Responsibilities:
-
-- keep the public `require "ios-icons"` entry point stable during refactor
-- map old method names to new implementations where reasonable
-- isolate deprecations instead of spreading compatibility hacks through the codebase
+These work, but they are still not cleanly separated from the core library.
 
 ## Data Model Direction
 
-The current model uses "icon" as the default word for almost everything. That is the wrong abstraction.
+Use these concepts:
 
-Use these concepts instead:
+- `Layout`: top-level dock plus pages
+- `Page`: ordered list of items
+- `Item`: generic SpringBoard thing
+- `App`: launchable app or web clip style entry
+- `Folder`: named item containing child items
+- `Widget`: opaque preserved widget item
+- `Stack`: opaque preserved smart stack item
 
-- `Layout`: dock plus pages
-- `Page`: ordered list of Springboard items
-- `Item`: generic Springboard thing on a page or in a folder
-- `AppItem`: launchable app or web clip with identifiers
-- `FolderItem`: named item containing child items
-- `WidgetItem`: widget entry
-- `StackItem`: smart stack containing widget entries
-
-Each item should have:
+Each parsed item should continue to have:
 
 - a stable `kind`
-- a stable opaque identity used for round-trip serialization
-- raw source metadata preserved where needed
+- an opaque stable `ref`
+- a hidden `__store` handle for round-trip ownership
+- raw metadata preserved where needed
 
 Example shape:
 
 ```lua
 {
   kind = "app",
-  ref = "opaque-stable-token",
+  ref = "item:42",
   id = "com.apple.MobileSMS",
   bundleIdentifier = "com.apple.MobileSMS",
   name = "Messages"
 }
 ```
 
-Avoid these anti-patterns:
+Avoid regressing into:
 
-- overriding global `type`
-- inferring item class from incidental fields at every call site
-- using `name .. "." .. id` as durable identity
+- global `type` overrides
+- treating every item as an “icon”
+- identity derived from mutable fields like `name .. "." .. id`
+- pretending opaque items are editable when they are not
 
-## Work Plan
+## Phase Status
 
-## Phase 0: Stabilize The Ground
+### Phase 0: Stabilize The Ground
 
-Objective:
+Status: complete
 
-Stop known correctness bugs before any structural refactor.
+Delivered:
 
-Tasks:
+- fixed `bundleIdentifier` assignment
+- fixed `fslurp` allocation/termination
+- removed the dead `image.lua` early return
+- stopped `image.lua` from leaking globals
+- fixed a cache-key bug in image color helpers
 
-- Fix the `bundleIdentifier` assignment bug in `src/sb_ios2lua.c`.
-- Fix `fslurp` allocation and null termination in `src/save_load.c`.
-- Remove the dead early return from `ios-icons/image.lua`.
-- Make `ios-icons/image.lua` stop assigning RGB/HSV temporaries into globals.
-- Review `src/comms.c` and `src/icons.c` for stack discipline and error propagation issues while touching adjacent code.
+### Phase 1: Replace The Type System
 
-Acceptance criteria:
+Status: complete
 
-- reading a plist into Lua exposes the real bundle identifier
-- loading plist fixtures does not truncate XML
-- `require "ios-icons.image"` returns the intended module table
-- repeated image helper calls do not mutate global Lua state
+Delivered:
 
-## Phase 1: Replace The Type System
+- explicit `springboard.kind`
+- real metatable-based classification
+- traversal no longer depends on patched built-ins
 
-Objective:
+### Phase 2: Define A Real Core Model
 
-Eliminate global `type` monkey-patching and replace it with explicit item classification.
+Status: complete for the current scope
 
-Tasks:
+Delivered:
 
-- Introduce a shared type utility module, for example `ios-icons/model/kind.lua`.
-- Replace all `type(v) == 'icon'` style checks with `kind.is(v, "app")`, `kind.is(v, "page")`, or equivalent.
-- Update:
-  - `ios-icons/icons.lua`
-  - `ios-icons/fn.lua`
-  - `ios-icons/icon.lua`
-  - `ios-icons/page.lua`
-  - `ios-icons/folder.lua`
-  - `ios-icons/widget.lua`
-  - `ios-icons/stack.lua`
-- Define a minimal shared interface for item-like objects, at least `kind`, `name`, `id`, and `__tostring`.
-- Make traversal helpers state explicitly whether widgets and stacks are visited, flattened, or preserved as opaque nodes.
-- Keep metatables if useful, but stop mutating globals.
+- `Layout` object with `dock` and `pages`
+- `App` model replacing the old icon fiction
+- `folder.items`
+- explicit opaque `Widget` and `Stack` item kinds
 
-Acceptance criteria:
+Remaining later:
 
-- loading model modules in any order produces identical behavior
-- traversal helpers no longer depend on patched built-ins
-- object classification is explicit and testable
-- page, folder, app, widget, and stack objects no longer have ad hoc baseline behavior
+- decide how web clips should be represented if they need distinct behavior
 
-## Phase 2: Define A Real Core Model
+### Phase 3: Rebuild Serialization Identity
 
-Objective:
+Status: complete
 
-Separate app items, folders, widgets, and stacks into explicit types with clear responsibilities.
+Delivered:
 
-Tasks:
+- opaque `ref` identity
+- per-layout `__store` ownership
+- round-trip no longer depends on mutable display fields
 
-- Introduce a `Layout` object instead of treating the top-level table as an anonymous list.
-- Rename or wrap current `icon` behavior into `AppItem`.
-- Make folder contents explicit child items rather than a special case inside "icon" handling.
-- Decide whether web clips are represented as `AppItem` variants or a separate item kind.
-- Preserve unknown item payloads so unsupported cases survive round-trip.
-- Decide whether legacy helpers such as `flatten`, `find`, `find_id`, and `dock` live on `Layout`, on a compatibility wrapper, or both.
+### Phase 4: Decide Widget And Stack Policy
 
-Acceptance criteria:
-
-- the model can represent every currently detected Springboard entity without lying about what it is
-- folder traversal and page traversal use the same item protocol
-- unsupported items are preserved, not dropped or misclassified
-
-## Phase 3: Rebuild Serialization Identity
-
-Objective:
-
-Make Lua-to-plist conversion reliable.
-
-Tasks:
-
-- Replace registry keys built from `name` and `id` with opaque stable references.
-- Store the mapping from Lua item to original plist node using a generated token or registry-backed userdata strategy.
-- Ensure copied nodes for folders and nested items do not lose identity unexpectedly.
-- Document which fields are user-editable and which are derived.
-
-Acceptance criteria:
-
-- reordering items without renaming them round-trips correctly
-- renaming display strings does not break lookup of original plist nodes
-- collisions between items with missing or duplicate names cannot corrupt serialization
-
-## Phase 4: Decide Widget And Stack Policy
-
-Objective:
-
-Stop pretending partial support is acceptable.
+Status: complete for now
 
 Decision:
 
-- widgets and smart stacks are currently treated as opaque unsupported items that are preserved but not editable
+- widgets and smart stacks are opaque preserved items
+- they are discoverable via `visit_items`, `opaque_items`, and `has_opaque_items`
+- mutation helpers do not accept them
 
-Tasks if fully supported later:
+Not in scope yet:
 
-- parse `elements` safely
-- guard NULL `bundleIdentifier` values during parse instead of crashing
-- represent widget and stack children explicitly
-- teach traversal and serialization code how to preserve them
+- first-class widget/stack editing
 
-Tasks under the current opaque policy:
+### Phase 5: Split Core And Optional Features
 
-- parse them into opaque item objects
-- block unsafe mutations on those objects
-- keep them visible to traversal code in a defined way rather than silently dropping them
-- document the limitation clearly
-
-Acceptance criteria:
-
-- no crash path for stacks containing items with missing bundle identifiers
-- support level is explicit in code and docs
-- opaque items are discoverable via dedicated traversal helpers without being treated as apps
-
-## Phase 5: Split Core And Optional Features
+Status: pending
 
 Objective:
 
@@ -266,170 +204,152 @@ Keep the core library narrow and predictable.
 
 Tasks:
 
-- Move `ios-icons/image.lua`, `ios-icons/graphics.lua`, `ios-icons/cache.lua`, and `ios-icons/itunes.lua` behind an optional feature layer.
-- Ensure the base library can load without GraphicsMagick, JSON, or socket dependencies.
-- Replace shell-based cache helpers with Lua file APIs where possible.
-- Make feature attachment explicit, for example `features.graphics.attach(layout, conn)`.
-- Decide whether image-fetching stays a method on `AppItem`, moves behind an attached feature, or is exposed as a separate service object.
+- decide whether `app_image` remains a connection method or becomes an attached feature
+- move image/color/iTunes/cache helpers behind a cleaner optional feature boundary
+- ensure the base library loads without optional tooling installed
+- replace shell-heavy cache helpers with direct Lua file APIs where possible
 
 Acceptance criteria:
 
-- core layout read/write works without optional tooling installed
-- optional features fail clearly and locally rather than poisoning the base module
+- core layout read/write works without optional extras installed
+- optional features fail clearly and locally
 
-## Phase 6: Clean The Repo Layout
+### Phase 6: Clean The Repo Layout
 
-Objective:
+Status: partially complete
 
-Make it obvious which files matter.
+Already done:
 
-Proposed structure:
+- active package is now `springboard/`
+- docs and fixture-backed tests live in sensible directories
 
-- `src/`: C bridge
-- `ios-icons/`: Lua package
-- `tests/fixtures/`: saved plists and offline samples
-- `examples/`: supported examples only
-- `docs/`: actual docs
-- `archive/` or `oldstuff/`: explicitly non-active material
+Still to do:
 
-Tasks:
-
-- move scratch and one-off files out of the repo root or delete them if obsolete
-- quarantine `oldstuff/` as archive-only
-- decide whether `.iTunesJson*` belongs in git at all; likely it does not
-- add ignore rules for generated files, caches, and local dumps
-- move the package entry point from `ios-icons.lua` to `ios-icons/init.lua` once compatibility shims are in place
-- keep the old entry point as a thin forwarder during the transition, then remove it after the rename settles
+- move or quarantine archive material that still competes with active source
+- clean root-level scratch/legacy files
+- review tracked local data artifacts and decide what belongs in git
+- tighten ignore rules for generated caches and dumps
 
 Acceptance criteria:
 
-- repo root contains only active project entry points and docs
-- archived experiments no longer compete visually with active source
-- module entry points follow standard Lua package layout rather than split root/package shims
+- repo root contains active entry points and real docs, not drift
+- archive material is visibly archive-only
 
-## Phase 7: Rewrite Tests Around Fixtures
+### Phase 7: Rewrite Tests Around Fixtures
 
-Objective:
+Status: started, not done
 
-Test the code that actually breaks.
+Already done:
 
-Tasks:
+- added a fixture-backed offline test covering:
+  - layout load
+  - app traversal/search
+  - opaque item discovery
+  - `ref` / `__store` invariants
+  - app-only reshape policy
 
-- Add fixture plist files covering:
-  - simple pages
-  - folders
-  - widgets
-  - smart stacks
-  - edge cases with missing names or bundle identifiers
-- Add offline tests for:
-  - plist to Lua parse
-  - Lua to plist round-trip
-  - find and traversal helpers
-  - widget and stack traversal semantics
-  - serialization identity stability
-- Add regression tests for:
-  - `bundleIdentifier` preserving the real bundle id
-  - `load_plist` not truncating the final byte
-  - `require "ios-icons.image"` returning the image module
-- Add either tests for `icons:swap()` or remove it from docs and examples if it is not part of the supported API.
-- Keep device-backed integration tests, but isolate and mark them clearly.
+Still to do:
+
+- add Lua-to-plist round-trip assertions offline
+- add edge-case fixtures for missing names / missing bundle identifiers
+- isolate and document device-backed integration tests
+- cover any supported write-path helpers that are still undocumented or untested
 
 Acceptance criteria:
 
-- most correctness tests run with no device attached
-- docs examples refer only to helpers that actually exist and are covered by tests
-- structural regressions fail fast in CI-compatible conditions
+- most correctness checks run without a device
+- regressions in parse/identity/traversal fail offline
+- device-backed tests are explicit integration tests, not the default safety net
 
-## Phase 8: Rewrite Docs After The Code Stops Lying
+### Phase 8: Keep Docs Honest
 
-Objective:
+Status: started, not done
 
-Make the docs match reality.
+Already done:
 
-Tasks:
+- rewrote `docs/README.md`
+- rewrote `docs/docs.md`
 
-- rewrite `docs/README.md`
-- remove references to missing scripts and stale install steps
-- document supported item kinds and unsupported cases
-- provide one safe read-only example and one explicitly destructive write example
+Still to do:
+
+- add a clear write-safety section
+- document any integration-test/device prerequisites
+- remove or archive stale examples that describe unsupported APIs
 
 Acceptance criteria:
 
-- a new reader can understand what the library does, what it does not do, and how risky write operations are
+- a new reader can tell what is safe, what is risky, and what is unsupported
 
-## Recommended Execution Order
+## Recommended Execution Order From Here
 
-Do the work in this order:
-
-1. Phase 0
-2. Phase 1
-3. Phase 3
-4. Phase 2
-5. Phase 4
-6. Phase 5
-7. Phase 7
-8. Phase 6
-9. Phase 8
+1. Phase 7
+2. Phase 5
+3. Phase 6
+4. Phase 8
 
 Reason:
 
-- correctness bugs should not survive into refactors
-- type and identity issues are the highest leverage problems
-- repo cleanup and docs can wait until the model and serialization story are stable
+- tests should pin current behavior before more refactoring
+- optional features are the next biggest source of design drift
+- repo cleanup is useful but lower leverage than locking behavior down
+- docs should be tightened again after the remaining structural cleanup settles
 
-## Proposed Milestones
+## Milestones
 
 ### Milestone A: Safe Core
 
-Includes:
+Status: complete
+
+Included:
 
 - Phase 0
 - Phase 1
+- Phase 2
 - Phase 3
+- Phase 4
+- baseline docs/tests work
 
 Outcome:
 
-- the library stops corrupting or misclassifying data for core app and folder flows
+- the core library is no longer lying about its model or relying on fragile identity hacks
 
-### Milestone B: Honest Model
+### Milestone B: Testable Core
+
+Status: active
 
 Includes:
 
-- Phase 2
-- Phase 4
+- finish Phase 7
+- tighten Phase 8 around supported vs unsupported behavior
 
 Outcome:
 
-- the code has an explicit and truthful representation of Springboard entities
+- the current model is locked down by offline tests and honest docs
 
 ### Milestone C: Maintainable Project
+
+Status: pending
 
 Includes:
 
 - Phase 5
 - Phase 6
-- Phase 7
-- Phase 8
 
 Outcome:
 
-- the project becomes testable, readable, and easier to extend into a CLI or TUI
+- the project surface becomes cleaner to extend without reintroducing confusion
 
 ## Immediate Next Tasks
 
-If execution starts now, the first concrete tasks should be:
-
-1. Patch `src/sb_ios2lua.c` to store the real `bundleIdentifier`.
-2. Patch `src/save_load.c` to fix buffer sizing and null termination.
-3. Patch `ios-icons/image.lua` to return the actual module.
-4. Add an offline plist fixture and a minimal test that asserts parse correctness for app and folder items.
-5. Replace global `type` overrides with a shared explicit kind check.
+1. Add offline round-trip tests that load a fixture, serialize it, and verify structural preservation.
+2. Add fixtures that exercise missing bundle identifiers and other malformed-but-real item data.
+3. Audit `springboard/image.lua`, `springboard/cache.lua`, `springboard/graphics.lua`, and `springboard/itunes.lua` for optional-dependency boundaries.
+4. Identify root/archive files that should be moved, ignored, or deleted.
 
 ## Open Questions
 
-These need answers before deeper refactor work is considered done:
+These are the remaining real decisions:
 
-1. Should widgets and smart stacks be editable in the first cleanup pass, or only preserved?
-2. Is Lua 5.1/5.2 compatibility still a real requirement, or can the code target one version cleanly?
-3. Do you want the public API to keep old method names like `icons()` and `get_icons()`, or is a compatibility shim acceptable during transition?
-4. Is `oldstuff/` intended as archival source to preserve in-repo, or should it move out entirely?
+1. Does `app_image` stay in the core connection API, or should it become an optional feature?
+2. Do web clips deserve their own explicit item kind, or are they fine as `App` for now?
+3. Which old example files are still worth keeping once the docs are fully aligned?
