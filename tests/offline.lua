@@ -2,6 +2,8 @@ package.path = './?.lua;./?/init.lua;' .. package.path
 package.cpath = './?.so;./?/?.so;' .. package.cpath
 
 local springboard = require "springboard"
+local cache = require "springboard.features.cache"
+local image = require "springboard.features.image"
 local kind = require "springboard.kind"
 
 local function collect_kinds(layout)
@@ -243,3 +245,28 @@ assert(first_folder(edge_reloaded).items[2].bundleIdentifier == nil)
 assert(kind.of(edge_reloaded:opaque_items()[1]) == "widget")
 
 os.remove(roundtrip_path)
+
+local cache_path = "/tmp/springboard-offline-cache"
+local feature_cache = cache.new(cache_path, function(item) return item.key end)
+feature_cache.set({ key = "one" }, "value")
+assert(feature_cache.get({ key = "one" }) == "value")
+assert(feature_cache.get({ key = "two" }, function() return "generated" end) == "generated")
+assert(feature_cache.get({ key = "two" }) == "generated")
+assert(#feature_cache.keys() >= 2)
+assert(feature_cache.remove({ key = "one" }) ~= nil)
+local bad_key_ok = pcall(function()
+  feature_cache.set({ key = "../bad" }, "bad")
+end)
+assert(bad_key_ok == false)
+
+local fake_app = {
+  id = "feature-image-test",
+}
+fake_app.image = image.new(fake_app)
+fake_app.image.make_rgb = function()
+  return string.char(10, 20, 30)
+end
+local r, g, b = fake_app.image.rgb()
+assert(r == 10)
+assert(g == 20)
+assert(b == 30)

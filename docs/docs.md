@@ -38,6 +38,7 @@
 `conn:app_image(app)`
 
 - returns PNG bytes for the given app
+- core API; optional color/image analysis lives under `springboard.features`
 
 `conn:wallpaper()`
 
@@ -122,3 +123,15 @@ These exist for round-trip identity/ownership and are not meant as public API:
 - `ref`
 - `__store`
 - `__source`
+
+### Optional Features
+
+Optional modules:
+
+- `springboard.features.graphics`
+- `springboard.features.image`
+- `springboard.features.itunes`
+- `springboard.features.cache`
+
+The core library does not load optional JSON, socket, cache, or GraphicsMagick
+dependencies.

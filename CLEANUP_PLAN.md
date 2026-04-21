@@ -98,12 +98,12 @@ Responsibilities:
 
 Current files:
 
-- `springboard/image.lua`
-- `springboard/graphics.lua`
-- `springboard/cache.lua`
-- `springboard/itunes.lua`
+- `springboard/features/image.lua`
+- `springboard/features/graphics.lua`
+- `springboard/features/cache.lua`
+- `springboard/features/itunes.lua`
 
-These work, but they are still not cleanly separated from the core library.
+These are opt-in and do not load with the core library.
 
 ## Data Model Direction
 
@@ -214,18 +214,19 @@ Not in scope yet:
 
 ### Phase 5: Split Core And Optional Features
 
-Status: pending
+Status: complete
 
 Objective:
 
 Keep the core library narrow and predictable.
 
-Tasks:
+Delivered:
 
-- decide whether `app_image` remains a connection method or becomes an attached feature
-- move image/color/iTunes/cache helpers behind a cleaner optional feature boundary
-- ensure the base library loads without optional tooling installed
-- replace shell-heavy cache helpers with direct Lua file APIs where possible
+- kept `conn:app_image(app)` in core as a direct SpringBoardServices capability
+- moved image/color/iTunes/cache helpers under `springboard.features.*`
+- removed top-level optional feature modules
+- ensured the base library loads without optional JSON/socket/GraphicsMagick/cache dependencies
+- replaced shell-heavy cache helpers with Lua file APIs and LuaFileSystem-backed directory handling
 
 Acceptance criteria:
 
@@ -360,13 +361,11 @@ Outcome:
 ## Immediate Next Tasks
 
 1. Add fixtures that exercise missing names / missing bundle identifiers.
-2. Audit `springboard/image.lua`, `springboard/cache.lua`, `springboard/graphics.lua`, and `springboard/itunes.lua` for optional-dependency boundaries.
-3. Identify root/archive files that should be moved, ignored, or deleted.
+2. Identify root/archive files that should be moved, ignored, or deleted.
 
 ## Open Questions
 
 These are the remaining real decisions:
 
-1. Does `app_image` stay in the core connection API, or should it become an optional feature?
-2. Do web clips deserve their own explicit item kind, or are they fine as `App` for now?
-3. Which old example files are still worth keeping once the docs are fully aligned?
+1. Do web clips deserve their own explicit item kind, or are they fine as `App` for now?
+2. Which old example files are still worth keeping once the docs are fully aligned?

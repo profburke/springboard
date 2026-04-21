@@ -170,6 +170,32 @@ Library methods:
 `springboard.load_plist(path)` is for fixtures, inspection, and research. It is
 not the normal import-and-write workflow.
 
+## Optional Features
+
+The base `springboard` module does not load optional image analysis, iTunes
+lookup, cache, JSON, socket, or GraphicsMagick dependencies.
+
+Optional modules live under `springboard.features.*`:
+
+- `springboard.features.graphics`
+- `springboard.features.image`
+- `springboard.features.itunes`
+- `springboard.features.cache`
+
+`conn:app_image(app)` stays in the core API because it is a direct
+SpringBoardServices capability. Color analysis and iTunes metadata are optional
+features.
+
+Example:
+
+```lua
+local graphics = require "springboard.features.graphics"
+
+local layout = conn:layout()
+graphics.attach(layout, conn)
+print(layout:with_color("blue"))
+```
+
 ## Round-Trip Identity
 
 Each parsed item gets an opaque `ref` like `item:42`.
