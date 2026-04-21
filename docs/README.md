@@ -48,6 +48,17 @@ make
 
 That compiles `iconlib.so` and copies it into [`springboard/`](/Users/matt/Projects/ios-icons/springboard).
 
+## Repo Layout
+
+- [`springboard/`](/Users/matt/Projects/ios-icons/springboard): active Lua package
+- [`springboard/features/`](/Users/matt/Projects/ios-icons/springboard/features): opt-in feature modules
+- [`src/`](/Users/matt/Projects/ios-icons/src): C bridge
+- [`tests/`](/Users/matt/Projects/ios-icons/tests): offline and device-backed tests
+- [`tests/fixtures/`](/Users/matt/Projects/ios-icons/tests/fixtures): plist fixtures
+- [`examples/`](/Users/matt/Projects/ios-icons/examples): current examples
+- [`docs/`](/Users/matt/Projects/ios-icons/docs): project documentation
+- [`archive/`](/Users/matt/Projects/ios-icons/archive): historical/non-active material
+
 ## Basic Usage
 
 ```lua

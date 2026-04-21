@@ -38,9 +38,6 @@ Completed:
 Still weak:
 
 - widgets and smart stacks are preserved but not first-class
-- optional feature modules are still mixed into the main package surface
-- cache helpers still deserve a security and API cleanup
-- repo layout still has historical clutter and archive material in active view
 - device-backed integration coverage is still thin and manual
 
 ## Non-Goals
@@ -235,19 +232,16 @@ Acceptance criteria:
 
 ### Phase 6: Clean The Repo Layout
 
-Status: partially complete
+Status: complete
 
 Already done:
 
 - active package is now `springboard/`
 - docs and fixture-backed tests live in sensible directories
-
-Still to do:
-
-- move or quarantine archive material that still competes with active source
-- clean root-level scratch/legacy files
-- review tracked local data artifacts and decide what belongs in git
-- tighten ignore rules for generated caches and dumps
+- historical `oldstuff/` tree moved to `archive/`
+- archive marked explicitly as non-active source
+- generated caches, local dumps, scratch files, and editor cruft are ignored
+- repo layout documented
 
 Acceptance criteria:
 
