@@ -29,7 +29,7 @@ What does not work yet:
 - first-class smart stack editing
 - unknown item editing
 - safe generic mutation helpers for opaque items
-- a real swap/move editing API
+- widget/stack movement with grid-size validation
 
 ## Build
 
@@ -267,3 +267,9 @@ movement, validation, opaque items, and Lua-to-plist round-trip behavior.
 The existing [`tests/tests.lua`](/Users/matt/Projects/ios-icons/tests/tests.lua)
 file is device-backed integration coverage. It assumes a connected iOS device
 and should not be treated as the default safety net.
+
+## Examples
+
+Examples live in [`examples/`](/Users/matt/Projects/ios-icons/examples). They
+are device-backed and intentionally conservative. None of the current examples
+write a modified layout back to a device.

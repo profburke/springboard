@@ -63,20 +63,6 @@ describe("springboard", function()
   --   conn:disconnect()
   -- end)
 
-  -- it("swaps dock apps", function() 
-  --   conn = ios.connect() 
-  --   layout = conn:layout()
-  --
-  --   local one = layout.dock[1]
-  --   local two = layout.dock[2]
-  --   layout:swap(layout.dock[1], layout.dock[2])
-  --   assert.same(layout.dock[1], two)
-  --   assert.same(layout.dock[2], one)
-
-  --   conn:disconnect()
-  -- end)
-
-
   it("complains when disconnected", function() 
     conn = ios.connect() 
     layout = conn:layout()

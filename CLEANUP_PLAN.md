@@ -276,36 +276,21 @@ Acceptance criteria:
 
 ### Phase 8: Keep Docs Honest
 
-Status: started, not done
+Status: complete
 
-Already done:
+Delivered:
 
 - rewrote `docs/README.md`
 - rewrote `docs/docs.md`
-
-Still to do:
-
-- add a clear write-safety section
-- document any integration-test/device prerequisites
-- remove or archive stale examples that describe unsupported APIs
+- added a clear write-safety section
+- documented offline versus device-backed tests
+- documented repo layout and archive status
+- documented optional feature boundaries
+- documented examples and their device-backed/read-only posture
 
 Acceptance criteria:
 
 - a new reader can tell what is safe, what is risky, and what is unsupported
-
-## Recommended Execution Order From Here
-
-1. Phase 7
-2. Phase 5
-3. Phase 6
-4. Phase 8
-
-Reason:
-
-- tests should pin current behavior before more refactoring
-- optional features are the next biggest source of design drift
-- repo cleanup is useful but lower leverage than locking behavior down
-- docs should be tightened again after the remaining structural cleanup settles
 
 ## Milestones
 
@@ -328,12 +313,12 @@ Outcome:
 
 ### Milestone B: Testable Core
 
-Status: active
+Status: complete
 
 Includes:
 
-- finish Phase 7
-- tighten Phase 8 around supported vs unsupported behavior
+- Phase 7
+- Phase 8
 
 Outcome:
 
@@ -341,7 +326,7 @@ Outcome:
 
 ### Milestone C: Maintainable Project
 
-Status: pending
+Status: complete
 
 Includes:
 
@@ -354,8 +339,8 @@ Outcome:
 
 ## Immediate Next Tasks
 
-1. Add fixtures that exercise missing names / missing bundle identifiers.
-2. Identify root/archive files that should be moved, ignored, or deleted.
+1. Decide whether web clips deserve an explicit item kind.
+2. Decide which example workflows should exist next.
 
 ## Open Questions
 
