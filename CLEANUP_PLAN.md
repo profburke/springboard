@@ -255,7 +255,7 @@ Acceptance criteria:
 
 ### Phase 7: Rewrite Tests Around Fixtures
 
-Status: started, not done
+Status: mostly complete
 
 Already done:
 
@@ -266,12 +266,15 @@ Already done:
   - `ref` / `__store` invariants
   - app/folder reshape policy
   - unknown item parsing
+  - Lua-to-plist round-trip assertions
+  - app/folder movement round-trip assertions
+  - file provenance invariants
+- documented the split between offline tests and device-backed integration tests
+- made file-loaded layouts savable so offline round-trip tests do not require a device
 
 Still to do:
 
-- add Lua-to-plist round-trip assertions offline
 - add edge-case fixtures for missing names / missing bundle identifiers
-- isolate and document device-backed integration tests
 - cover any supported write-path helpers that are still undocumented or untested
 
 Acceptance criteria:
@@ -360,10 +363,9 @@ Outcome:
 
 ## Immediate Next Tasks
 
-1. Add offline round-trip tests that load a fixture, serialize it, and verify structural preservation.
-2. Add fixtures that exercise missing bundle identifiers and other malformed-but-real item data.
-3. Audit `springboard/image.lua`, `springboard/cache.lua`, `springboard/graphics.lua`, and `springboard/itunes.lua` for optional-dependency boundaries.
-4. Identify root/archive files that should be moved, ignored, or deleted.
+1. Add fixtures that exercise missing names / missing bundle identifiers.
+2. Audit `springboard/image.lua`, `springboard/cache.lua`, `springboard/graphics.lua`, and `springboard/itunes.lua` for optional-dependency boundaries.
+3. Identify root/archive files that should be moved, ignored, or deleted.
 
 ## Open Questions
 

@@ -224,5 +224,9 @@ Offline fixture-backed test:
 lua tests/offline.lua
 ```
 
+That test covers parse behavior, traversal, model invariants, app/folder
+movement, validation, opaque items, and Lua-to-plist round-trip behavior.
+
 The existing [`tests/tests.lua`](/Users/matt/Projects/ios-icons/tests/tests.lua)
-file is still device-backed and assumes a connected iOS device.
+file is device-backed integration coverage. It assumes a connected iOS device
+and should not be treated as the default safety net.

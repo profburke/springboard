@@ -8,6 +8,7 @@
 #include <plist/plist.h>
 
 #include "springboard.h"
+#include "layout.h"
 
 void
 raise_lua_stdio_err(lua_State *L)
@@ -100,6 +101,7 @@ ios_load_layout_plist(lua_State *L)
   plist_t layoutState = NULL;
   char* xml = NULL;
   const char* path;
+  int rc;
 
   path = lua_tostring(L, -1);
   xml = fslurp(path);
@@ -114,5 +116,8 @@ ios_load_layout_plist(lua_State *L)
 
   lua_pop(L, 1);
 
-  return ios_plist_to_table(L, layoutState, kSourceFile);
+  rc = ios_plist_to_table(L, layoutState, kSourceFile);
+  lua_pushcfunction(L, ios_save_layout_plist);
+  lua_setfield(L, -2, kSavePlistMethodName);
+  return rc;
 }

@@ -4,6 +4,42 @@ package.cpath = './?.so;./?/?.so;' .. package.cpath
 local springboard = require "springboard"
 local kind = require "springboard.kind"
 
+local function collect_kinds(layout)
+  local counts = {}
+  layout:visit_items(function(item)
+    local k = kind.of(item)
+    counts[k] = (counts[k] or 0) + 1
+  end)
+  return counts
+end
+
+local function first_folder(layout)
+  local folder
+  layout:visit_items(function(item)
+    if not folder and kind.is(item, "folder") then
+      folder = item
+    end
+  end)
+  return folder
+end
+
+local function assert_same_counts(left, right)
+  assert(#left.dock == #right.dock)
+  assert(#left.pages == #right.pages)
+  for idx = 1, #left.pages do
+    assert(#left.pages[idx] == #right.pages[idx])
+  end
+
+  local left_kinds = collect_kinds(left)
+  local right_kinds = collect_kinds(right)
+  for k, count in pairs(left_kinds) do
+    assert(right_kinds[k] == count)
+  end
+  for k, count in pairs(right_kinds) do
+    assert(left_kinds[k] == count)
+  end
+end
+
 local fixture = "tests/fixtures/springboard-layout-sample.plist"
 local layout = springboard.load_plist(fixture)
 
@@ -13,6 +49,7 @@ assert(type(layout.dock) == "table")
 assert(type(layout.pages) == "table")
 assert(type(layout.__store) == "userdata")
 assert(layout.__source == "file")
+assert(type(layout.save_plist) == "function")
 assert(#layout.dock > 0)
 
 local apps = layout:flatten()
@@ -71,12 +108,7 @@ if a and b and c then
   assert(type(reshaped.pages) == "table")
 end
 
-local folder
-layout:visit_items(function(item)
-  if not folder and kind.is(item, "folder") then
-    folder = item
-  end
-end)
+local folder = first_folder(layout)
 
 if a and folder then
   local reshaped = layout.reshape({ a, folder })
@@ -138,6 +170,7 @@ assert(unknown_item:is_editable() == false)
 local unknown_layout = springboard.load_plist("tests/fixtures/springboard-unknown-item.plist")
 local parsed_unknown = unknown_layout.dock[1]
 assert(unknown_layout.__source == "file")
+assert(type(unknown_layout.save_plist) == "function")
 assert(kind.of(parsed_unknown) == "unknown")
 assert(type(parsed_unknown.ref) == "string")
 assert(type(parsed_unknown.__store) == "userdata")
@@ -148,3 +181,30 @@ local unknown_ok, unknown_err = pcall(function()
 end)
 assert(unknown_ok == false)
 assert(unknown_err:match("layout%.reshape only supports app and folder items"))
+
+local roundtrip_path = "/tmp/springboard-offline-roundtrip.plist"
+local roundtrip = springboard.load_plist(fixture)
+roundtrip:save_plist(roundtrip_path)
+local reloaded = springboard.load_plist(roundtrip_path)
+assert(reloaded.__source == "file")
+assert(type(reloaded.save_plist) == "function")
+assert_same_counts(roundtrip, reloaded)
+assert(reloaded.dock[1].bundleIdentifier == roundtrip.dock[1].bundleIdentifier)
+
+local moved = springboard.load_plist(fixture)
+local moved_apps = moved:flatten()
+local moved_folder = first_folder(moved)
+if moved_folder and moved_apps[1] then
+  local moved_id = moved_apps[1].id
+  local before = moved_folder:count()
+  assert(moved:move_app_to_folder(moved_apps[1], moved_folder) == true)
+  assert(moved_folder:count() == before + 1)
+  moved:save_plist(roundtrip_path)
+
+  local moved_reloaded = springboard.load_plist(roundtrip_path)
+  local moved_reloaded_folder = first_folder(moved_reloaded)
+  assert(moved_reloaded_folder:count() == before + 1)
+  assert(moved_reloaded_folder.items[#moved_reloaded_folder.items].id == moved_id)
+end
+
+os.remove(roundtrip_path)

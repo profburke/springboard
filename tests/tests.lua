@@ -1,5 +1,8 @@
 -- BUSTED! - what's busted precious? http://olivinelabs.com/busted/
 -- sidenote: i don't condone calling dude's prescious.
+--
+-- Device-backed integration tests. These require a connected iOS device and
+-- should not be treated as the default safety net. Run tests/offline.lua first.
 
 package.path = '../?.lua;../?/init.lua;' .. package.path
 package.cpath = '../?.so;../?/?.so;' .. package.cpath
