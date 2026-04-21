@@ -1,48 +1,93 @@
+## API Summary
 
-## Main Methods
+### Library
 
-### connect
+`springboard.connect([udid])`
 
-Takes optional UDID and opens a connection to the specified (or default) device. Returns a connection object.
+- opens a connection to the default or specified device
 
+`springboard.ios_errno()`
 
-### ios_errno
+- returns the last connection error code
 
-idevice_errno is a global error; this prints it.
+`springboard.load_plist(path)`
 
+- loads a saved SpringBoard plist from disk into a `Layout`
 
-### load_plist
+### Connection
 
-Reads a PLIST of an icon "structure" stored in an XML file. Returns it as a Lua table.
+`conn:layout()` / `conn:get_layout()`
 
+- fetches the current device layout
 
-## Types
+`conn:set_layout(layout)`
 
-### connection
+- writes the given layout back to the device
 
-#### disconnect
+`conn:app_image(app)`
 
-Ends the connection to the device.
+- returns PNG bytes for the given app
 
-#### icons
+`conn:wallpaper()`
 
-Retrieves a Lua table describing the icons and their arrangement.
+- returns PNG bytes for the current home screen wallpaper
 
+`conn:devicename()`
 
-#### get_icons
+- returns the device name
 
-Same as `icons`.
+`conn:disconnect()`
 
+- closes the device connection
 
-#### set_icons
+### Layout
 
-Updates the device so its icon arrangement matches the passed in table.
+Fields:
 
+- `dock`
+- `pages`
 
-#### icon_image
+Methods:
 
-Retrives the PNG of the given app's icon. Takes an icon table as paramter.
+- `flatten()`
+- `find(query)`
+- `find_all(query)`
+- `find_id(query)`
+- `visit(fn)`
+- `visit_items(fn)`
+- `opaque_items()`
+- `has_opaque_items()`
 
-#### _tostring
+`find*` methods accept either a plain substring or a Lua pattern.
 
-Prints the devices name or disconnected if no device.
+Mutation:
+
+- `reshape(flat_apps)`
+
+`reshape` only accepts apps.
+
+### Item Kinds
+
+`App`
+
+- first-class editable item
+
+`Folder`
+
+- first-class container
+- children live in `folder.items`
+
+`Widget`
+
+- opaque preserved item
+
+`Stack`
+
+- opaque preserved item
+
+### Hidden Internal Fields
+
+These exist for round-trip identity/ownership and are not meant as public API:
+
+- `ref`
+- `__store`

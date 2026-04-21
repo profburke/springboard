@@ -42,6 +42,15 @@ local function visit_all_items(items, visitor)
    end
 end
 
+local function contains_or_matches(value, pat)
+   if type(pat) ~= "string" then
+      return false
+   end
+
+   return string.find(value, pat, 1, true) ~= nil
+      or string.find(value, pat) ~= nil
+end
+
 local function assert_apps_only(items, operation)
    for idx, value in ipairs(items) do
       if not kind.is(value, "app") then
@@ -100,12 +109,11 @@ layout.flatten = function(tab)
 end
 
 layout.find_all = function(tab, pat)
-   local strfind = string.find
    local insert = table.insert
    local result = {}
 
    for _, value in ipairs(tab:flatten()) do
-      if strfind(value.name or "", pat) then
+      if contains_or_matches(value.name or "", pat) then
          insert(result, value)
       end
    end
@@ -114,10 +122,8 @@ layout.find_all = function(tab, pat)
 end
 
 layout.find = function(tab, pat)
-   local strfind = string.find
-
    for _, value in ipairs(tab:flatten()) do
-      if strfind(value.name or "", pat) then
+      if contains_or_matches(value.name or "", pat) then
          return value
       end
    end
@@ -126,10 +132,8 @@ layout.find = function(tab, pat)
 end
 
 layout.find_id = function(tab, pat)
-   local strfind = string.find
-
    for _, value in ipairs(tab:flatten()) do
-      if strfind(value.id or "", pat) then
+      if contains_or_matches(value.id or "", pat) then
          return value
       end
    end

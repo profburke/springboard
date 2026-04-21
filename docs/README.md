@@ -1,124 +1,169 @@
-# springboard - scripted iPhone/iOS layout arrangement
----
+# springboard
 
-springboard is a [lua](http://www.lua.org/) module enabling communication 
-with iPhone/iPod/iPad device(s) over usb for the purposes of icon arrangement.
+`springboard` is a Lua library with a C bridge for reading and writing iOS
+SpringBoard layout data over USB.
 
-## Usage
+It is not a generic icon library. The current model is:
 
-![demo repl session](caps/dock-set.gif)
+- `Layout`
+- `Page`
+- `App`
+- `Folder`
+- `Widget` and `Stack` as opaque preserved items
 
-### basics
+## Current Status
 
-`ios.connect` returns a connection for read / set operations.
+What works:
 
-    bash# lua
-    Lua 5.2.3  Copyright (C) 1994-2013 Lua.org, PUC-Rio
-    > ios = require "springboard"
-    > conn = ios.connect()
-    > icons = conn:get_icons()
+- connect to a device and fetch the current layout
+- load a saved plist fixture from disk
+- traverse/search apps in a layout
+- save a modified layout back to plist
+- write a modified layout back to a device
+- preserve widgets and smart stacks during round-trip
 
-`conn:get_icons()` returns a table model of the current 
-icons as arranged on device (by page then (icon or group/icon). 
+What does not work yet:
 
-    > -- how many (springboard) pages do I have?
-    > print(#icons)
-    12
+- first-class widget editing
+- first-class smart stack editing
+- safe generic mutation helpers for opaque items
+- a real swap/move editing API
 
-as well as the model objects, icons contains a bunch of utility methods,
-like `flatten`, `find`, `visit` ...
+## Build
 
-    > -- how many icons do I have overall?
-    > print(#icons:flatten())
-    222
+Requirements:
 
-### updating the device
+- Lua 5.4
+- `libimobiledevice`
+- `libplist`
+- a working C toolchain
 
-The simplest update you can make swaps two icon positions
+Build the C module with:
 
-    > print(icons:dock())
-    pr0nz, Mail, 1Password, Safari
-    >
-    > -- wait - err, how'd that get there!
-    > icons:swap(icons[1][1], icons:find("Messages"))
-    > conn:set_icons(icons)
-    >
-    > print(conn:get_icons()[1])
-    Messages, Mail, 1Password, Safari
+```sh
+make
+```
 
-see [example_sort](example_sort/README.md) and [source](lib) for more details.
+That compiles `iconlib.so` and copies it into [`springboard/`](/Users/matt/Projects/ios-icons/springboard).
 
-## Requirements and Installation
+## Basic Usage
 
-Communication is via usb, using the excellent 
-[libimobiledevice](https://github.com/libimobiledevice/libimobiledevice) and
-[libplist](https://github.com/libimobiledevice/libplist) libraries **both of
-which are required to build**. 
+```lua
+local springboard = require "springboard"
 
-#### osx install:
+local conn = springboard.connect()
+local layout = conn:layout()
 
+print(layout)
+print(#layout.dock)
+print(#layout.pages)
 
-    brew install lua --with-completion
-    brew install luarocks libimobiledevice libplist
-    luarocks install springboard
+local messages = layout:find("Messages")
+print(messages.name, messages.id, messages.ref)
 
+conn:disconnect()
+```
 
-**NOTE: The luarocks command above will not work.** ()*It will pull code from the original repository. If the original repository built properly,
-I wouldn't have had to make this fork.*)
+## Data Model
 
-Instead, run make as follows:
+`Layout` fields:
 
-    make
-    
-Then run the sample app:
+- `dock`: a `Page`
+- `pages`: array of `Page`
+- `__store`: hidden internal handle used for round-trip ownership
 
-    ./try_me.lua
-    
-Make sure `try_me.lua` has execute permission. If that doesn't mean anything to you, you
-can also try
+`App` fields commonly present:
 
-    lua try_me.lua
+- `name`
+- `id`
+- `bundleIdentifier`
+- `ref`
+- `__store`
 
-The result should be a listing of info related to whatever app is first in your dock. For example,
-on my iPhone, I get the following output:
+`Folder` fields:
 
-    matt@stormageddon:~/Matt/Projects/ios-icons $ ./try_me.lua 
-    Info on the left-most docked app:
+- `name`
+- `id`
+- `ref`
+- `items`
+- `__store`
 
-      bundleIdentifier: com.agilebits.onepassword-ios
-                    id: com.agilebits.onepassword-ios
-                  role: icon
-                  name: 1Password
+`Widget` / `Stack`:
 
-    
-    
-The `makefile` assumes the following:
+- preserved as opaque items
+- include `ref` and `__store`
+- report `:support() == "opaque"`
+- report `:is_editable() == false`
 
-1. You have the build tools installed (make, llvm, etc.)
-2. You have successfully installed `Lua`, `libimobiledevice` and 'libplist`.
+## Layout Helpers
 
-By the way, if you're curious about the `makefile`, I'm using the same compiler and linker
-flags that `luarocks` would use&mdash;I'm not certain they're the best choices, but I haven't
-really dug into it. As I mention above, push requests welcome!
+App-only helpers:
 
-**As for Linux installs, try the following, but you're on your own. I haven't had time to try installing on Linux.**
+- `layout:flatten()`
+- `layout:find(query)`
+- `layout:find_all(query)`
+- `layout:find_id(query)`
+- `layout:visit(fn)`
 
-#### linux install:
+The search helpers accept either a plain substring or a Lua pattern.
 
-As well as osx I've tested on ubuntu (14.4) but the install was 
-significantly more complicated due to incompatible libimobiledevice
-versions in apt. 
+All-item helpers:
 
-I can't ascertain the politics or technical details of why 
-libimobiledevice-2 exists, nor where it's source is hosted
-online but it appears quite incompatible with the version of the lib
-I've used, and the header files unfortunately conflict.
+- `layout:visit_items(fn)`
+- `layout:opaque_items()`
+- `layout:has_opaque_items()`
 
-To work around this I built libimobiledevice, libplist and libusbmuxd from 
-source, installed each with checkinstall. *Tread careful if you decide
-to follow in my footsteps here - I don't use any of the Linux ios tooling
-so may have broken rhythmbox/syncing/whatever the kids use these days and
-I wouldn't even know.*
+Mutation helper:
 
-I used lua5.2 from apt and build luarocks from source (although I've since
-forgotten what failure prompted the manual rocks build).
+- `layout.reshape(flat_apps)`
+
+`layout.reshape(...)` is intentionally app-only. Passing widgets, stacks,
+folders, or other non-app items is an error.
+
+## Device API
+
+Connection methods:
+
+- `conn:layout()`
+- `conn:get_layout()`
+- `conn:set_layout(layout)`
+- `conn:app_image(app)`
+- `conn:wallpaper()`
+- `conn:devicename()`
+- `conn:disconnect()`
+
+Library methods:
+
+- `springboard.connect([udid])`
+- `springboard.ios_errno()`
+- `springboard.load_plist(path)`
+
+## Round-Trip Identity
+
+Each parsed item gets an opaque `ref` like `item:42`.
+
+That `ref` is what round-trip serialization uses to recover the original plist
+node. It no longer depends on mutable fields like `name` or `id`.
+
+## Opaque Widget/Stack Policy
+
+Widgets and smart stacks are currently:
+
+- parsed as explicit item kinds
+- preserved during round-trip
+- discoverable via `layout:visit_items(...)` and `layout:opaque_items()`
+- not modeled internally beyond their top-level item record
+- not supported by mutation helpers
+
+That is deliberate. First-class support needs more research.
+
+## Tests
+
+Offline fixture-backed test:
+
+```sh
+lua tests/offline.lua
+```
+
+The existing [`tests/tests.lua`](/Users/matt/Projects/ios-icons/tests/tests.lua)
+file is still device-backed and assumes a connected iOS device.
