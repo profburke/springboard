@@ -88,6 +88,28 @@ if a and folder then
   assert(folder:is_opaque() == false)
 end
 
+local folder_app
+if folder and #folder.items > 0 then
+  folder_app = folder.items[1]
+  local before = #folder.items
+  assert(layout:remove_app(folder_app) == true)
+  assert(#folder.items == before - 1)
+  assert(layout:remove_app(folder_app) == false)
+  assert(layout:move_app_to_folder(folder_app, folder) == false)
+  table.insert(layout.dock, folder_app)
+  assert(layout:move_app_to_folder(folder_app, folder) == true)
+  assert(folder.items[#folder.items] == folder_app)
+  assert(layout:move_app_to_page(folder_app, layout.dock) == true)
+  assert(layout.dock[#layout.dock] == folder_app)
+end
+
+if folder and a then
+  local before = #folder.items
+  assert(layout:move_app_to_folder(a, folder) == true)
+  assert(#folder.items == before + 1)
+  assert(folder.items[#folder.items] == a)
+end
+
 local ok, err = pcall(function()
   layout.reshape({ apps[1], opaque[1] })
 end)

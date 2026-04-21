@@ -61,6 +61,9 @@ Methods:
 - `visit_items(fn)`
 - `opaque_items()`
 - `has_opaque_items()`
+- `remove_app(app)`
+- `move_app_to_folder(app, folder)`
+- `move_app_to_page(app, page[, position])`
 
 `find*` methods accept either a plain substring or a Lua pattern.
 
@@ -79,8 +82,8 @@ Mutation:
 `Folder`
 
 - first-class movable container
-- children live in `folder.items`
-- contents are not editable through a supported helper yet
+- children live in a flat `folder.items` list
+- apps can move into and out of folders
 
 `Widget`
 

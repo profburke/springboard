@@ -90,8 +90,8 @@ conn:disconnect()
 - `items`
 - `__store`
 
-Folders are movable as atomic containers, but their contents are not editable
-through a supported helper yet.
+Folders are movable as atomic containers. Their contents are modeled as one
+flat `folder.items` list.
 
 `Widget` / `Stack` / `Unknown`:
 
@@ -117,6 +117,12 @@ All-item helpers:
 - `layout:visit_items(fn)`
 - `layout:opaque_items()`
 - `layout:has_opaque_items()`
+
+Folder/app mutation helpers:
+
+- `layout:remove_app(app)`
+- `layout:move_app_to_folder(app, folder)`
+- `layout:move_app_to_page(app, page[, position])`
 
 Mutation helper:
 

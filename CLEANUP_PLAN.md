@@ -20,6 +20,7 @@ Completed:
 - `Layout` / `Page` / `App` / `Folder` model introduced
 - folder children normalized to `folder.items`
 - folders made movable as atomic containers
+- apps can move into folders and back out to pages
 - widgets, stacks, and unknown payloads made explicit opaque item kinds
 - reshape restricted to movable apps and folders
 - round-trip identity moved to opaque `ref`
@@ -82,6 +83,7 @@ Responsibilities:
 - define the model surface
 - provide traversal and search helpers
 - provide safe layout reshaping for movable app/folder flows
+- provide basic app/folder movement helpers
 - make opaque unsupported items discoverable instead of silently dropping them
 
 ### Optional Features
@@ -168,6 +170,7 @@ Delivered:
 - `App` model replacing the old icon fiction
 - `folder.items`
 - folders movable as atomic containers
+- app movement into folders and back out to pages
 - explicit opaque `Widget`, `Stack`, and `Unknown` item kinds
 
 Remaining later:

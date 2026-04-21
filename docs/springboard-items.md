@@ -36,15 +36,15 @@ Open questions:
 Current support:
 
 - first-class movable container
-- children are exposed as `folder.items`
+- children are exposed as a flat `folder.items` list
 - `layout.reshape` moves folders atomically
 - folder contents round-trip through modeled child items
+- apps can move into and out of folders
+- apps move out of folders by moving them to a target page or dock
 
 Open questions:
 
-- Are folder children actually a flat list, or should folder pages be modeled?
 - What are the capacity rules for folder pages?
-- Can apps move into and out of folders safely?
 - Can folders be created from scratch?
 - Can folders be deleted safely?
 - Can folder names be edited safely?

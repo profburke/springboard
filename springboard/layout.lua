@@ -55,6 +55,33 @@ local function is_movable_container_item(value)
    return kind.is(value, "app") or kind.is(value, "folder")
 end
 
+local function assert_app_item(value, operation)
+   if not kind.is(value, "app") then
+      error(string.format("%s only supports app items; found %s", operation, kind.of(value)))
+   end
+end
+
+local function assert_page_table(value, operation)
+   if type(value) ~= "table" then
+      error(string.format("%s requires a page table; found %s", operation, type(value)))
+   end
+end
+
+local function remove_from_items(items, target)
+   for idx, value in ipairs(items) do
+      if value == target then
+         table.remove(items, idx)
+         return true
+      end
+
+      if kind.is(value, "folder") and remove_from_items(value.items or {}, target) then
+         return true
+      end
+   end
+
+   return false
+end
+
 local function assert_movable_container_items(items, operation)
    for idx, value in ipairs(items) do
       if not is_movable_container_item(value) then
@@ -176,6 +203,46 @@ end
 
 layout.has_opaque_items = function(tab)
    return #tab:opaque_items() > 0
+end
+
+layout.remove_app = function(tab, app)
+   assert_app_item(app, "layout.remove_app")
+
+   local removed = false
+   each_page(tab, function(current)
+      if not removed then
+         removed = remove_from_items(current, app)
+      end
+   end)
+
+   return removed
+end
+
+layout.move_app_to_folder = function(tab, app, folder)
+   assert_app_item(app, "layout.move_app_to_folder")
+   if not kind.is(folder, "folder") then
+      error(string.format("layout.move_app_to_folder requires a folder; found %s", kind.of(folder)))
+   end
+
+   if not tab:remove_app(app) then
+      return false
+   end
+
+   folder.items = folder.items or {}
+   table.insert(folder.items, app)
+   return true
+end
+
+layout.move_app_to_page = function(tab, app, target_page, position)
+   assert_app_item(app, "layout.move_app_to_page")
+   assert_page_table(target_page, "layout.move_app_to_page")
+
+   if not tab:remove_app(app) then
+      return false
+   end
+
+   table.insert(target_page, position or (#target_page + 1), app)
+   return true
 end
 
 local dockMax = 4
