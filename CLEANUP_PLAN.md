@@ -21,6 +21,7 @@ Completed:
 - folder children normalized to `folder.items`
 - folders made movable as atomic containers
 - apps can move into folders and back out to pages
+- folder capacity validation is opt-in because the real limits vary
 - widgets, stacks, and unknown payloads made explicit opaque item kinds
 - reshape restricted to movable apps and folders
 - round-trip identity moved to opaque `ref`
@@ -84,6 +85,7 @@ Responsibilities:
 - provide traversal and search helpers
 - provide safe layout reshaping for movable app/folder flows
 - provide basic app/folder movement helpers
+- provide opt-in validation for target-specific folder capacity
 - make opaque unsupported items discoverable instead of silently dropping them
 
 ### Optional Features
@@ -171,6 +173,7 @@ Delivered:
 - `folder.items`
 - folders movable as atomic containers
 - app movement into folders and back out to pages
+- opt-in folder capacity validation
 - explicit opaque `Widget`, `Stack`, and `Unknown` item kinds
 
 Remaining later:

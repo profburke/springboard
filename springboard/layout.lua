@@ -205,6 +205,33 @@ layout.has_opaque_items = function(tab)
    return #tab:opaque_items() > 0
 end
 
+layout.validate = function(tab, options)
+   local issues = {}
+   local folder_capacity = options and options.folder_capacity
+
+   if folder_capacity ~= nil then
+      assert(type(folder_capacity) == "number", "folder_capacity must be a number")
+      tab:visit_items(function(item)
+         if kind.is(item, "folder") and #(item.items or {}) > folder_capacity then
+            table.insert(issues, {
+               kind = "folder_capacity",
+               item = item,
+               limit = folder_capacity,
+               count = #(item.items or {}),
+               message = string.format(
+                  "folder %s contains %d items; limit is %d",
+                  item.name or item.ref or "<unnamed>",
+                  #(item.items or {}),
+                  folder_capacity
+               ),
+            })
+         end
+      end)
+   end
+
+   return issues
+end
+
 layout.remove_app = function(tab, app)
    assert_app_item(app, "layout.remove_app")
 

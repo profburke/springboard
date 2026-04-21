@@ -41,10 +41,12 @@ Current support:
 - folder contents round-trip through modeled child items
 - apps can move into and out of folders
 - apps move out of folders by moving them to a target page or dock
+- capacity is not enforced by default
+- callers may use `layout:validate({ folder_capacity = N })` when targeting a known limit
 
 Open questions:
 
-- What are the capacity rules for folder pages?
+- What are the exact capacity rules by iOS version and device class?
 - Can folders be created from scratch?
 - Can folders be deleted safely?
 - Can folder names be edited safely?

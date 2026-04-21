@@ -93,6 +93,10 @@ conn:disconnect()
 Folders are movable as atomic containers. Their contents are modeled as one
 flat `folder.items` list.
 
+Folder capacity is not enforced by default. Reports vary by iOS version and
+device class. Use `layout:validate({ folder_capacity = N })` if you want to
+apply a known limit for a specific target.
+
 `Widget` / `Stack` / `Unknown`:
 
 - preserved as opaque items
@@ -117,6 +121,7 @@ All-item helpers:
 - `layout:visit_items(fn)`
 - `layout:opaque_items()`
 - `layout:has_opaque_items()`
+- `layout:validate([options])`
 
 Folder/app mutation helpers:
 

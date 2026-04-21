@@ -61,6 +61,7 @@ Methods:
 - `visit_items(fn)`
 - `opaque_items()`
 - `has_opaque_items()`
+- `validate([options])`
 - `remove_app(app)`
 - `move_app_to_folder(app, folder)`
 - `move_app_to_page(app, page[, position])`
@@ -73,6 +74,9 @@ Mutation:
 
 `reshape` accepts apps and folders. Folders move as atomic containers.
 
+`validate({ folder_capacity = N })` reports folder capacity issues when a caller
+provides an explicit limit. No folder limit is enforced by default.
+
 ### Item Kinds
 
 `App`
@@ -84,6 +88,7 @@ Mutation:
 - first-class movable container
 - children live in a flat `folder.items` list
 - apps can move into and out of folders
+- `count()` returns the number of contained items
 
 `Widget`
 

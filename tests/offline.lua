@@ -86,6 +86,7 @@ if a and folder then
   assert(folder:is_movable() == true)
   assert(folder:is_editable() == false)
   assert(folder:is_opaque() == false)
+  assert(folder:count() == #folder.items)
 end
 
 local folder_app
@@ -108,6 +109,14 @@ if folder and a then
   assert(layout:move_app_to_folder(a, folder) == true)
   assert(#folder.items == before + 1)
   assert(folder.items[#folder.items] == a)
+end
+
+if folder then
+  assert(#layout:validate() == 0)
+  local issues = layout:validate({ folder_capacity = math.max(0, #folder.items - 1) })
+  assert(#issues >= 1)
+  assert(issues[1].kind == "folder_capacity")
+  assert(issues[1].item == folder)
 end
 
 local ok, err = pcall(function()

@@ -29,4 +29,8 @@ folder.is_movable = function()
    return true
 end
 
+folder.count = function(f)
+   return #(f.items or {})
+end
+
 return folder
