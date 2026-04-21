@@ -3,6 +3,9 @@
 This is the working model. It should change only when fixtures or device
 experiments prove something more precise.
 
+Supporting research notes live in
+[`research-notes.md`](/Users/matt/Projects/ios-icons/docs/research-notes.md).
+
 ## App
 
 Current support:
