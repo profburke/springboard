@@ -51,6 +51,16 @@ local function assert_same_counts(left, right)
   end
 end
 
+local function assert_grid_metadata(item, expected_grid_size, expected_slots)
+  assert(item:grid_size() == expected_grid_size)
+  assert(item.gridSize == expected_grid_size)
+  assert(item:slot_count() == expected_slots)
+  local slot_size = item:slot_size()
+  assert(slot_size.slots == expected_slots)
+  assert(type(slot_size.width) == "number")
+  assert(type(slot_size.height) == "number")
+end
+
 local fixture = "tests/fixtures/springboard-layout-sample.plist"
 local layout = springboard.load_plist(fixture)
 
@@ -97,6 +107,11 @@ layout:visit_items(function(item)
     assert(item:support() == "opaque")
     assert(item:is_opaque() == true)
     assert(item:is_editable() == false)
+    if kind.is(item, "widget") or kind.is(item, "stack") then
+      assert(type(item.grid_size) == "function")
+      assert(type(item.slot_size) == "function")
+      assert(type(item.slot_count) == "function")
+    end
   end
 end)
 
@@ -110,6 +125,19 @@ if #opaque > 0 then
 end
 
 assert(saw_opaque)
+
+local sample_widget
+layout:visit_items(function(item)
+  if not sample_widget and kind.is(item, "widget") then
+    sample_widget = item
+  end
+end)
+if sample_widget then
+  assert_grid_metadata(sample_widget, "medium", 8)
+  assert(type(sample_widget.widgetIdentifier) == "string")
+  assert(type(sample_widget.containerBundleIdentifier) == "string")
+  assert(sample_widget.elementType == "widget")
+end
 
 local a, b, c = apps[1], apps[2], apps[3]
 if a and b and c then
@@ -178,6 +206,11 @@ assert(unknown_item:support() == "opaque")
 assert(unknown_item:is_opaque() == true)
 assert(unknown_item:is_editable() == false)
 
+local synthetic_xlarge_widget = setmetatable({ gridSize = "xtralarge" }, springboard.widget.__meta)
+assert(synthetic_xlarge_widget:grid_size() == "xtralarge")
+assert(synthetic_xlarge_widget:slot_size() == nil)
+assert(synthetic_xlarge_widget:slot_count() == nil)
+
 local unknown_layout = springboard.load_plist("tests/fixtures/springboard-unknown-item.plist")
 local parsed_unknown = unknown_layout.dock[1]
 assert(unknown_layout.__source == "file")
@@ -220,6 +253,7 @@ local edge_opaque = edge_layout:opaque_items()
 assert(#edge_opaque == 1)
 assert(kind.of(edge_opaque[1]) == "widget")
 assert(edge_opaque[1].bundleIdentifier == nil)
+assert_grid_metadata(edge_opaque[1], "small", 4)
 
 local roundtrip_path = "/tmp/springboard-offline-roundtrip.plist"
 local roundtrip = springboard.load_plist(fixture)

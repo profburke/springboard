@@ -134,8 +134,11 @@ Creating and deleting folders is unsupported. Empty folders are allowed.
 - report `:is_editable() == false`
 
 Research indicates widgets should be movable once grid-size validation exists.
-Widget `gridSize` values include `small`, `medium`, `large`, and iPad-only
-`xtralarge`.
+Widget and stack `gridSize` metadata is parsed when present. Use
+`:grid_size()`, `:slot_size()`, or `:slot_count()` to inspect it. Known sizes
+are modeled as `small` = 2x2, `medium` = 4x2, and `large` = 4x4. The
+iPad-only `xtralarge` value is preserved but does not yet have a verified slot
+footprint.
 
 ## Layout Helpers
 

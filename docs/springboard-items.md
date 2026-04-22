@@ -67,13 +67,14 @@ Current support:
 - research indicates widgets are safe to move if slot size is respected
 - creating, deleting, and editing widgets is unsupported
 - `gridSize` defines widget slot size: `small`, `medium`, `large`, or `xtralarge` on iPad
+- parsed metadata includes `gridSize`, `widgetIdentifier`, `containerBundleIdentifier`, and `elementType` when present
+- `grid_size()`, `slot_size()`, and `slot_count()` expose verified slot dimensions
 
 Open questions:
 
-- Which fields define identity, size, extension kind, and host app?
 - Can widget configuration be preserved after movement?
 - Are there widget records that do not have bundle identifiers?
-- How should layout slot validation model `gridSize`?
+- How should page validation account for occupied slots, device class, and page capacity?
 
 ## Smart Stack
 
@@ -82,6 +83,8 @@ Current support:
 - opaque preserved item
 - discoverable through `visit_items` and `opaque_items`
 - not accepted by mutation helpers
+- `gridSize` metadata is parsed when present
+- `grid_size()`, `slot_size()`, and `slot_count()` expose verified slot dimensions
 
 Open questions:
 

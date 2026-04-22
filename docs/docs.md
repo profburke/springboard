@@ -117,11 +117,14 @@ provides an explicit limit. No folder limit is enforced by default.
 
 - opaque preserved item
 - research indicates widgets can move once grid-size validation exists
-- `gridSize` values include `small`, `medium`, `large`, and iPad-only `xtralarge`
+- `gridSize` metadata is parsed when present
+- `grid_size()`, `slot_size()`, and `slot_count()` expose verified slot dimensions
 
 `Stack`
 
 - opaque preserved item
+- `gridSize` metadata is parsed when present
+- `grid_size()`, `slot_size()`, and `slot_count()` expose verified slot dimensions
 
 `Unknown`
 

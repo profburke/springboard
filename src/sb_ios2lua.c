@@ -53,7 +53,7 @@ int ios_plist_to_table(lua_State* L, plist_t layoutState, const char* source) {
 }
 
 void parseNode(lua_State* L, plist_t node, int depth, int handleIdx) {
-  char* name, *id, *bundleId, *iconType;
+  char* name, *id, *bundleId, *iconType, *gridSize, *widgetId, *containerBundleId, *elementType;
   plist_t kids, elements;
   int hasKids, hasElements;
   int numChildren;
@@ -69,6 +69,10 @@ void parseNode(lua_State* L, plist_t node, int depth, int handleIdx) {
     id = getStringVal(node, kAppleDisplayIDKey);
     name = getStringVal(node, kAppleDisplayNameKey);
     bundleId = getStringVal(node, kAppleBundleIdKey);
+    gridSize = getStringVal(node, kAppleGridSizeKey);
+    widgetId = getStringVal(node, kAppleWidgetIdKey);
+    containerBundleId = getStringVal(node, kAppleContainerBundleIdKey);
+    elementType = getStringVal(node, kAppleElementTypeKey);
     kids = dictEntry(node, kAppleIconListKey);
     elements = dictEntry(node, kAppleElementsKey);
     hasKids = groupSize(kids) > 0;
@@ -88,6 +92,10 @@ void parseNode(lua_State* L, plist_t node, int depth, int handleIdx) {
     if (name != NULL) { SET_STRING(L, kItemName,name); }
     if (id != NULL) { SET_STRING(L, kItemId,id); }
     if (bundleId != NULL) { SET_STRING(L, kAppleBundleIdKey,bundleId); }
+    if (gridSize != NULL) { SET_STRING(L, kAppleGridSizeKey,gridSize); }
+    if (widgetId != NULL) { SET_STRING(L, kAppleWidgetIdKey,widgetId); }
+    if (containerBundleId != NULL) { SET_STRING(L, kAppleContainerBundleIdKey,containerBundleId); }
+    if (elementType != NULL) { SET_STRING(L, kAppleElementTypeKey,elementType); }
     storeItemInRegistry(L, handleIdx, node);
     if (lua_type(L, -2) != LUA_TTABLE) {
       luaL_error(L, "registry stack corruption before item ref set");

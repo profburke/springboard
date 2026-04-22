@@ -28,6 +28,8 @@ Editing widgets is not allowed.
 
 The `gridSize` key determines how many slots a widget takes.
 Values are `small`, `medium`, `large`, and `xtralarge` on iPad only.
+The library models `small`, `medium`, and `large` as 2x2, 4x2, and 4x4
+icon-slot footprints. The `xtralarge` footprint still needs device evidence.
 
 ## 5. Smart Stack
 
