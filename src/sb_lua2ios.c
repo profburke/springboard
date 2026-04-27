@@ -4,7 +4,7 @@
 
 #include <libimobiledevice/libimobiledevice.h>
 
-#include "ios-icons.h"
+#include "springboard_api.h"
 #include "springboard.h"
 
 int addPageIconsToPList(lua_State* L, plist_t page);
@@ -12,56 +12,68 @@ void addIconsToGroup(lua_State* L, plist_t group);
 
 plist_t ios_table_to_plist(lua_State* L)
 {
-  plist_t iconState, p;
-  iconState = plist_new_array();
+  plist_t layoutState, currentPage;
   int i;
+  int len;
+
+  layoutState = plist_new_array();
 
   if (lua_type(L, -1) != LUA_TTABLE) {
-    luaL_error(L, "internal error! can't convert %s to icons", 
+    luaL_error(L, "internal error! can't convert %s to layout", 
                   luaL_typename(L, -1));
   }
 
-  // Iterate dock+pages
-  int len = lua_rawlen(L, -1);
-  for (i=1; i< len+1; i++) 
-  {
-    // push page to top of stack
+  lua_getfield(L, -1, kDockKey);
+  if (lua_istable(L, -1)) {
+    currentPage = plist_new_array();
+    plist_array_append_item(layoutState, currentPage);
+    addPageIconsToPList(L, currentPage);
+  }
+  lua_pop(L, 1);
+
+  lua_getfield(L, -1, kPagesKey);
+  len = lua_rawlen(L, -1);
+  for (i=1; i< len+1; i++) {
     lua_rawgeti(L, -1, i);
 
-    // create plist page to match
-    if (lua_istable(L, -1))
-    {
-      p = plist_new_array(); 
-      plist_array_append_item(iconState, p);
-      addPageIconsToPList(L, p);
+    if (lua_istable(L, -1)) {
+      currentPage = plist_new_array();
+      plist_array_append_item(layoutState, currentPage);
+      addPageIconsToPList(L, currentPage);
     }
 
     lua_pop(L, 1);
   }
+  lua_pop(L, 1);
 
-  return iconState;
+  return layoutState;
 }
 
 plist_t luaToStoredPListItem(lua_State* L)
 {
   plist_t pageItem;
+  const char* ref;
+  int handleType;
 
-  lua_getfield(L, -1, kIconName);
-  lua_getfield(L, -2, kIconId);
+  lua_getfield(L, -1, kItemRef);
+  ref = lua_tostring(L, -1);
+  lua_pop(L, 1);
+
+  lua_getfield(L, -1, kStoreHandleKey);
+  handleType = lua_type(L, -1);
+  if (handleType != LUA_TUSERDATA) {
+    luaL_error(L, "missing item store handle for ref=%s", ref);
+  }
   
-  pageItem = retrieveIconFromRegistry(L, 
-                    lua_tostring(L, -2),
-                    lua_tostring(L, -1));
+  pageItem = retrieveItemFromRegistry(L, -1, ref);
+  lua_pop(L, 1);
 
   if (pageItem == NULL) 
   { 
-    luaL_error(L, "%s (name=%s, id=%s)", 
-                    kUnknownIconData, 
-                    lua_tostring(L, -2), 
-                    lua_tostring(L, -1));
+    luaL_error(L, "%s (ref=%s)", 
+                    kUnknownItemData, 
+                    ref);
   }
-
-  lua_pop(L, 2); // name + id
 
   return pageItem;
 }
@@ -77,7 +89,9 @@ int addPageIconsToPList(lua_State* L, plist_t page)
     lua_rawgeti(L, -1, i); 
     pageItem = luaToStoredPListItem(L);
 
-    lua_getfield(L, -1, kIconsKey);
+    // Under the opaque policy, only folders expose modeled child items here.
+    // Widgets and stacks round-trip via their original stored plist node.
+    lua_getfield(L, -1, kItemsKey);
     if (! lua_isnoneornil(L, -1)) 
     {
       pageItem = plist_copy(pageItem);
@@ -107,4 +121,3 @@ void addIconsToGroup(lua_State* L, plist_t group)
   }
   plist_dict_set_item(group, kAppleIconListKey, wasteful_format);
 }
-

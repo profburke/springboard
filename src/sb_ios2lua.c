@@ -1,29 +1,61 @@
 #include <stdio.h>
 #include <string.h>
 #include <lua.h>
+#include <lauxlib.h>
 
 #include <plist/plist.h>
 
-#include "ios-icons.h"
-#include "icons.h"
+#include "springboard_api.h"
+#include "layout.h"
 #include "springboard.h"
 #include "util.h"
 #include "sb_ios2lua.h"
 
-// Converts the passed in plist and converts it to a Lua table.
-// The entry at index 1 is the dock icons, so page 1 is at index 2
-// and so on.
-int ios_plist_to_table(lua_State* L, plist_t iconState) {
+// Converts the passed in plist into a Layout table.
+int ios_plist_to_table(lua_State* L, plist_t layoutState, const char* source) {
+  int handleIdx, rootIdx, layoutIdx, pagesIdx;
+  int pageCount, i;
+
+  pushItemStoreHandle(L);
+  handleIdx = lua_absindex(L, -1);
   lua_newtable(L);
-  parseNode(L, iconState, 0);
+  parseNode(L, layoutState, 0, handleIdx);
   lua_rawgeti(L, -1, 1);
+  rootIdx = lua_absindex(L, -1);
+
+  lua_newtable(L);
+  addToTable(L, kLayoutTypeKey);
+  layoutIdx = lua_absindex(L, -1);
+
+  lua_rawgeti(L, rootIdx, 1);
+  lua_setfield(L, layoutIdx, kDockKey);
+
+  lua_newtable(L);
+  pagesIdx = lua_absindex(L, -1);
+  pageCount = lua_rawlen(L, rootIdx);
+  for (i=2; i<pageCount+1; i++) {
+    lua_rawgeti(L, rootIdx, i);
+    lua_rawseti(L, pagesIdx, i - 1);
+  }
+  lua_setfield(L, layoutIdx, kPagesKey);
+
+  lua_pushvalue(L, handleIdx);
+  lua_setfield(L, layoutIdx, kStoreHandleKey);
+  if (source != NULL) {
+    lua_pushstring(L, source);
+    lua_setfield(L, layoutIdx, kSourceKey);
+  }
+
+  lua_remove(L, rootIdx);
+  lua_remove(L, handleIdx);
   lua_remove(L, -2);
   return 1;
 }
 
-void parseNode(lua_State* L, plist_t node, int depth) {
-  char* name, *id, *bundleId, *iconType;
+void parseNode(lua_State* L, plist_t node, int depth, int handleIdx) {
+  char* name, *id, *bundleId, *iconType, *gridSize, *widgetId, *containerBundleId, *elementType;
   plist_t kids, elements;
+  int hasKids, hasElements;
   int numChildren;
   int i;
   
@@ -37,39 +69,54 @@ void parseNode(lua_State* L, plist_t node, int depth) {
     id = getStringVal(node, kAppleDisplayIDKey);
     name = getStringVal(node, kAppleDisplayNameKey);
     bundleId = getStringVal(node, kAppleBundleIdKey);
+    gridSize = getStringVal(node, kAppleGridSizeKey);
+    widgetId = getStringVal(node, kAppleWidgetIdKey);
+    containerBundleId = getStringVal(node, kAppleContainerBundleIdKey);
+    elementType = getStringVal(node, kAppleElementTypeKey);
     kids = dictEntry(node, kAppleIconListKey);
     elements = dictEntry(node, kAppleElementsKey);
+    hasKids = groupSize(kids) > 0;
+    hasElements = groupSize(elements) > 0;
     
     if (iconType != NULL && strcmp(iconType, "custom") == 0) {
-      // Item is either a widget or a smart stack.
-      addToTable(L, groupSize(elements) > 0 ? kSmartStackTypeKey : kWidgetTypeKey);
+      // Widgets and smart stacks are preserved as opaque items.
+      addToTable(L, hasElements ? kSmartStackTypeKey : kWidgetTypeKey);
+    } else if (hasKids) {
+      addToTable(L, kFolderTypeKey);
+    } else if (name != NULL || id != NULL || bundleId != NULL) {
+      addToTable(L, kAppTypeKey);
     } else {
-      // Item is an app or a folder.
-      addToTable(L, groupSize(kids) > 0 ? kFolderTypeKey : kIconUserDataType);
-    }
-
-    if (name == NULL && id == NULL) {
-      lua_pushstring(L, "unexpected value reading icons!");
-      lua_error(L);
+      addToTable(L, kUnknownTypeKey);
     }
     
-    if (name != NULL) { SET_STRING(L, kIconName,name); }
-    if (id != NULL) { SET_STRING(L, kIconId,id); }
-    if (bundleId != NULL) { SET_STRING(L, kAppleBundleIdKey,id); }
-    storeIconInRegistry(L, node, name, id); 
+    if (name != NULL) { SET_STRING(L, kItemName,name); }
+    if (id != NULL) { SET_STRING(L, kItemId,id); }
+    if (bundleId != NULL) { SET_STRING(L, kAppleBundleIdKey,bundleId); }
+    if (gridSize != NULL) { SET_STRING(L, kAppleGridSizeKey,gridSize); }
+    if (widgetId != NULL) { SET_STRING(L, kAppleWidgetIdKey,widgetId); }
+    if (containerBundleId != NULL) { SET_STRING(L, kAppleContainerBundleIdKey,containerBundleId); }
+    if (elementType != NULL) { SET_STRING(L, kAppleElementTypeKey,elementType); }
+    storeItemInRegistry(L, handleIdx, node);
+    if (lua_type(L, -2) != LUA_TTABLE) {
+      luaL_error(L, "registry stack corruption before item ref set");
+    }
+    lua_setfield(L, -2, kItemRef);
+    lua_pushvalue(L, handleIdx);
+    lua_setfield(L, -2, kStoreHandleKey);
 
     // TODO: remove the duplication
     
     // If item is a folder, add the contained apps as a table.
-    if (groupSize(kids) > 0) {
+    if (hasKids) {
       lua_newtable(L);
-      flatPackArray(L, kids, depth+1);
-      lua_setfield(L, -2, kIconsKey);
+      flatPackArray(L, kids, depth+1, handleIdx);
+      lua_setfield(L, -2, kItemsKey);
     }
 
+    // Opaque policy: preserve widgets/stacks as single items for round-trip.
+    // Their internals are intentionally not modeled yet.
     // TODO: "Siri Suggestions" doesn't contain a bundle ID, so
-    // if a stack contains it, the following crashes...
-    // If item is a stack, add the contained widgets as a table.
+    // full stack parsing still needs null-safe element handling.
     // if (groupSize(elements) > 0) {
     // lua_newtable(L);
     //   flatPackArray(L, elements, depth+1);
@@ -79,11 +126,11 @@ break;
     
   case PLIST_ARRAY:
     lua_newtable(L);
-    addToTable(L, depth == 0 ? kIconCollectionTypeKey : kPageTypeKey);
+    addToTable(L, depth == 0 ? kLayoutTypeKey : kPageTypeKey);
     
     numChildren = groupSize(node);
     for (i=0;i<numChildren;i++) {
-      parseNode(L, arrayElem(node, i), depth+1);
+      parseNode(L, arrayElem(node, i), depth+1, handleIdx);
     }
     
   default:
@@ -107,15 +154,15 @@ break;
 // unfortunately we get back all groups double wrapped, seems
 // apple was preparing for something that never came, if that
 // day does come this might need to go
-void flatPackArray(lua_State* L, plist_t node, int depth) {
+void flatPackArray(lua_State* L, plist_t node, int depth, int handleIdx) {
   int i;
   
   if (nodeType(node) == PLIST_ARRAY) {
     for (i=0;i<groupSize(node);i++) {
-      flatPackArray(L, arrayElem(node, i), depth);
+      flatPackArray(L, arrayElem(node, i), depth, handleIdx);
     }      
   } else {
-    parseNode(L, node, depth);
+    parseNode(L, node, depth, handleIdx);
   }
 }
 
@@ -135,4 +182,3 @@ char *getStringVal(plist_t dict, const char* key) {
   
   return charVal;
 }
-

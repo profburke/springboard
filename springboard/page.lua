@@ -1,4 +1,5 @@
 local format = string.format
+local kind = require "springboard.kind"
 
 
 local page_mt = {}
@@ -18,20 +19,11 @@ page_mt.__tostring = function(p)
    return result
 end
 
+kind.register(page_mt, "page")
 
 local page = {}
 page.__meta = page_mt
-
-
-local oldtype = type
-function type(v)
-   if getmetatable(v) == page_mt then
-      return 'page'
-   else
-      return oldtype(v)
-   end
-end
+page_mt.__index = page
 
 
 return page
-

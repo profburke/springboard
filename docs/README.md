@@ -1,124 +1,298 @@
-# ios-icons - scripted iphone/ios icon arrangement
----
+# springboard
 
-ios-icons is a [lua](http://www.lua.org/) module enabling communication 
-with iPhone/iPod/iPad device(s) over usb for the purposes of icon arrangement.
+`springboard` is a Lua library with a C bridge for reading and writing iOS
+SpringBoard layout data over USB.
 
-## Usage
+It is not a generic icon library. The current model is:
 
-![demo repl session](caps/dock-set.gif)
+- `Layout`
+- `Page`
+- `App`
+- `Folder`
+- `Widget`, `Stack`, and `Unknown` as opaque preserved items
 
-### basics
+## Current Status
 
-`ios.connect` returns a connection for read / set operations.
+What works:
 
-    bash# lua
-    Lua 5.2.3  Copyright (C) 1994-2013 Lua.org, PUC-Rio
-    > ios = require "ios-icons"
-    > conn = ios.connect()
-    > icons = conn:get_icons()
+- connect to a device and fetch the current layout
+- load a saved plist fixture from disk
+- save a raw device layout plist without parsing
+- traverse/search apps in a layout
+- save a modified layout back to plist
+- write a modified layout back to a device
+- preserve widgets and smart stacks during round-trip
 
-`conn:get_icons()` returns a table model of the current 
-icons as arranged on device (by page then (icon or group/icon). 
+What does not work yet:
 
-    > -- how many (springboard) pages do I have?
-    > print(#icons)
-    12
+- first-class widget editing
+- first-class smart stack editing
+- unknown item editing
+- exact sparse-page placement preservation on iOS 18+/26
 
-as well as the model objects, icons contains a bunch of utility methods,
-like `flatten`, `find`, `visit` ...
+## Build
 
-    > -- how many icons do I have overall?
-    > print(#icons:flatten())
-    222
+Requirements:
 
-### updating the device
+- Lua 5.4
+- `libimobiledevice`
+- `libplist`
+- a working C toolchain
 
-The simplest update you can make swaps two icon positions
+Build the C module with:
 
-    > print(icons:dock())
-    pr0nz, Mail, 1Password, Safari
-    >
-    > -- wait - err, how'd that get there!
-    > icons:swap(icons[1][1], icons:find("Messages"))
-    > conn:set_icons(icons)
-    >
-    > print(conn:get_icons()[1])
-    Messages, Mail, 1Password, Safari
+```sh
+make
+```
 
-see [example_sort](example_sort/README.md) and [source](lib) for more details.
+That compiles `iconlib.so` and copies it into [`springboard/`](/Users/matt/Projects/ios-icons/springboard).
 
-## Requirements and Installation
+## Repo Layout
 
-Communication is via usb, using the excellent 
-[libimobiledevice](https://github.com/libimobiledevice/libimobiledevice) and
-[libplist](https://github.com/libimobiledevice/libplist) libraries **both of
-which are required to build**. 
+- [`springboard/`](/Users/matt/Projects/ios-icons/springboard): active Lua package
+- [`springboard/features/`](/Users/matt/Projects/ios-icons/springboard/features): opt-in feature modules
+- [`src/`](/Users/matt/Projects/ios-icons/src): C bridge
+- [`tests/`](/Users/matt/Projects/ios-icons/tests): offline and device-backed tests
+- [`tests/fixtures/`](/Users/matt/Projects/ios-icons/tests/fixtures): plist fixtures
+- [`examples/`](/Users/matt/Projects/ios-icons/examples): current examples
+- [`docs/`](/Users/matt/Projects/ios-icons/docs): project documentation
+- [`archive/`](/Users/matt/Projects/ios-icons/archive): historical/non-active material
 
-#### osx install:
+## Basic Usage
 
+```lua
+local springboard = require "springboard"
 
-    brew install lua --with-completion
-    brew install luarocks libimobiledevice libplist
-    luarocks install ios-icons
+local conn = springboard.connect()
+local layout = conn:layout()
 
+print(layout)
+print(#layout.dock)
+print(#layout.pages)
 
-**NOTE: The luarocks command above will not work.** ()*It will pull code from the original repository. If the original repository built properly,
-I wouldn't have had to make this fork.*)
+local messages = layout:find("Messages")
+print(messages.name, messages.id, messages.ref)
 
-Instead, run make as follows:
+conn:disconnect()
+```
 
-    make
-    
-Then run the sample app:
+## Data Model
 
-    ./try_me.lua
-    
-Make sure `try_me.lua` has execute permission. If that doesn't mean anything to you, you
-can also try
+The top-level `springboard` module is the public facade. It exposes the device
+API plus core model modules:
 
-    lua try_me.lua
+- `springboard.kind`
+- `springboard.layout`
+- `springboard.page`
+- `springboard.app`
+- `springboard.folder`
+- `springboard.widget`
+- `springboard.stack`
+- `springboard.unknown`
 
-The result should be a listing of info related to whatever app is first in your dock. For example,
-on my iPhone, I get the following output:
+`Layout` fields:
 
-    matt@stormageddon:~/Matt/Projects/ios-icons $ ./try_me.lua 
-    Info on the left-most docked app:
+- `dock`: a `Page`
+- `pages`: array of `Page`
+- `__store`: hidden internal handle used for round-trip ownership
+- `__source`: `"device"` or `"file"`
 
-      bundleIdentifier: com.agilebits.onepassword-ios
-                    id: com.agilebits.onepassword-ios
-                  role: icon
-                  name: 1Password
+`App` fields commonly present:
 
-    
-    
-The `makefile` assumes the following:
+- `name`
+- `id`
+- `bundleIdentifier`
+- `ref`
+- `__store`
 
-1. You have the build tools installed (make, llvm, etc.)
-2. You have successfully installed `Lua`, `libimobiledevice` and 'libplist`.
+Apps are move-only. Editing fields, creating apps, and deleting apps are not
+supported.
 
-By the way, if you're curious about the `makefile`, I'm using the same compiler and linker
-flags that `luarocks` would use&mdash;I'm not certain they're the best choices, but I haven't
-really dug into it. As I mention above, push requests welcome!
+`Folder` fields:
 
-**As for Linux installs, try the following, but you're on your own. I haven't had time to try installing on Linux.**
+- `name`
+- `id`
+- `ref`
+- `items`
+- `__store`
 
-#### linux install:
+Folders are movable as atomic containers. Their contents are modeled as one
+flat `folder.items` list.
 
-As well as osx I've tested on ubuntu (14.4) but the install was 
-significantly more complicated due to incompatible libimobiledevice
-versions in apt. 
+Folder capacity is not enforced by default. Reports vary by iOS version and
+device class. Use `layout:validate({ folder_capacity = N })` if you want to
+apply a known limit for a specific target.
 
-I can't ascertain the politics or technical details of why 
-libimobiledevice-2 exists, nor where it's source is hosted
-online but it appears quite incompatible with the version of the lib
-I've used, and the header files unfortunately conflict.
+Creating and deleting folders is unsupported. Empty folders are allowed.
 
-To work around this I built libimobiledevice, libplist and libusbmuxd from 
-source, installed each with checkinstall. *Tread careful if you decide
-to follow in my footsteps here - I don't use any of the Linux ios tooling
-so may have broken rhythmbox/syncing/whatever the kids use these days and
-I wouldn't even know.*
+`Widget` / `Stack` / `Unknown`:
 
-I used lua5.2 from apt and build luarocks from source (although I've since
-forgotten what failure prompted the manual rocks build).
+- preserved as opaque items
+- include `ref` and `__store`
+- report `:is_editable() == false`
+
+Widgets and stacks are movable as atomic items, but their internals remain
+opaque. `gridSize` metadata is parsed when present. Use `:grid_size()`,
+`:slot_size()`, or `:slot_count()` to inspect normalized compact-layout
+footprints. The library normalizes both `xtralarge` and `extraLarge` to
+`extraLarge`.
+
+Exact sparse-page placement is not modeled. On iOS 18+/26, the raw layout
+plist does not expose explicit gap coordinates, so movement/reshape support is
+for compacted layouts only.
+
+## Layout Helpers
+
+App-only helpers:
+
+- `layout:flatten()`
+- `layout:find(query)`
+- `layout:find_all(query)`
+- `layout:find_id(query)`
+- `layout:visit(fn)`
+
+The search helpers accept either a plain substring or a Lua pattern.
+
+All-item helpers:
+
+- `layout:visit_items(fn)`
+- `layout:opaque_items()`
+- `layout:has_opaque_items()`
+- `layout:validate([options])`
+- `layout:remove_item(item)`
+- `layout:move_item_to_page(item, page[, position])`
+
+Folder/app mutation helpers:
+
+- `layout:remove_app(app)`
+- `layout:move_app_to_folder(app, folder)`
+- `layout:move_app_to_page(app, page[, position])`
+
+Mutation helper:
+
+- `layout.reshape(flat_items[, options])`
+
+`layout.reshape(...)` accepts apps, folders, widgets, and stacks. Folders,
+widgets, and stacks move atomically. Unknown items are still rejected.
+
+`layout:validate({ dock_capacity = N, page_capacity = M })` checks compacted
+slot usage. `layout.reshape(..., { dock_capacity = N, page_capacity = M })`
+packs items by slot footprint using defaults of dock `4` and page `24`.
+Override these for device-specific targets, especially iPad layouts.
+
+## Device API
+
+Connection methods:
+
+- `conn:layout()`
+- `conn:get_layout()`
+- `conn:save_raw_layout_plist(path)`
+- `conn:set_layout(layout)`
+- `conn:set_layout(layout, { force = true })`
+- `conn:app_image(app)`
+- `conn:wallpaper()`
+- `conn:devicename()`
+- `conn:disconnect()`
+
+Library methods:
+
+- `springboard.connect([udid])`
+- `springboard.ios_errno()`
+- `springboard.load_plist(path)`
+
+`springboard.load_plist(path)` is for fixtures, inspection, and research. It is
+not the normal import-and-write workflow.
+
+## Optional Features
+
+The base `springboard` module does not load optional image analysis, iTunes
+lookup, cache, JSON, socket, or GraphicsMagick dependencies.
+
+Optional modules are loaded through explicit feature functions:
+
+- `springboard.features.graphics()`
+- `springboard.features.image()`
+- `springboard.features.itunes()`
+- `springboard.features.cache()`
+
+`conn:app_image(app)` stays in the core API because it is a direct
+SpringBoardServices capability. Color analysis and iTunes metadata are optional
+features.
+
+Example:
+
+```lua
+local springboard = require "springboard"
+local graphics = springboard.features.graphics()
+
+local layout = conn:layout()
+graphics.attach(layout, conn)
+print(layout:with_color("blue"))
+```
+
+## Round-Trip Identity
+
+Each parsed item gets an opaque `ref` like `item:42`.
+
+That `ref` is what round-trip serialization uses to recover the original plist
+node. It no longer depends on mutable fields like `name` or `id`.
+
+## Raw Plist Dumps
+
+Use `conn:save_raw_layout_plist(path)` when you need a research/debug backup of
+exactly what SpringBoardServices returned.
+
+Do not use `layout:save_plist(path)` for raw capture. That method saves the
+current Lua model back to plist and can normalize structures the model does not
+fully understand yet.
+
+## Write Safety
+
+Layouts fetched from a device have `layout.__source == "device"`. Layouts loaded
+from disk have `layout.__source == "file"`.
+
+`conn:set_layout(layout)` refuses file-loaded layouts by default. If you really
+intend to restore or experiment with a local plist, call:
+
+```lua
+conn:set_layout(layout, { force = true })
+```
+
+That force flag is deliberately noisy. A local plist can be stale, edited,
+device-specific, or structurally invalid for the connected phone.
+
+## Opaque Item Policy
+
+Widgets, smart stacks, and unknown items are currently:
+
+- parsed as explicit item kinds
+- preserved during round-trip
+- discoverable via `layout:visit_items(...)` and `layout:opaque_items()`
+- not modeled internally beyond their top-level item record
+- not supported by mutation helpers
+
+That is deliberate. First-class support needs more research.
+
+See [`springboard-items.md`](/Users/matt/Projects/ios-icons/docs/springboard-items.md)
+for the current item taxonomy and open questions.
+
+## Tests
+
+Offline fixture-backed test:
+
+```sh
+lua tests/offline.lua
+```
+
+That test covers parse behavior, traversal, model invariants, app/folder
+movement, validation, opaque items, and Lua-to-plist round-trip behavior.
+
+The existing [`tests/tests.lua`](/Users/matt/Projects/ios-icons/tests/tests.lua)
+file is device-backed integration coverage. It assumes a connected iOS device
+and should not be treated as the default safety net.
+
+## Examples
+
+Examples live in [`examples/`](/Users/matt/Projects/ios-icons/examples). They
+are device-backed and intentionally conservative. None of the current examples
+write a modified layout back to a device.

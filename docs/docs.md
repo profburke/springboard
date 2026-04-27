@@ -1,48 +1,155 @@
+## API Summary
 
-## Main Methods
+### Library
 
-### connect
+`springboard.connect([udid])`
 
-Takes optional UDID and opens a connection to the specified (or default) device. Returns a connection object.
+- opens a connection to the default or specified device
 
+`springboard.ios_errno()`
 
-### ios_errno
+- returns the last connection error code
 
-idevice_errno is a global error; this prints it.
+`springboard.load_plist(path)`
 
+- loads a saved SpringBoard plist from disk into a file-sourced `Layout`
+- intended for fixtures, inspection, and research
 
-### load_plist
+Top-level model modules:
 
-Reads a PLIST of an icon "structure" stored in an XML file. Returns it as a Lua table.
+- `springboard.kind`
+- `springboard.layout`
+- `springboard.page`
+- `springboard.app`
+- `springboard.folder`
+- `springboard.widget`
+- `springboard.stack`
+- `springboard.unknown`
 
+### Connection
 
-## Types
+`conn:layout()` / `conn:get_layout()`
 
-### connection
+- fetches the current device layout
 
-#### disconnect
+`conn:save_raw_layout_plist(path)`
 
-Ends the connection to the device.
+- writes the raw SpringBoardServices layout plist to disk without parsing
 
-#### icons
+`conn:set_layout(layout)`
 
-Retrieves a Lua table describing the icons and their arrangement.
+- writes the given layout back to the device
+- refuses file-sourced layouts unless forced
 
+`conn:set_layout(layout, { force = true })`
 
-#### get_icons
+- writes a file-sourced layout intentionally
+- unsafe unless the plist is known-good for the target device
 
-Same as `icons`.
+`conn:app_image(app)`
 
+- returns PNG bytes for the given app
+- core API; optional color/image analysis lives under `springboard.features`
 
-#### set_icons
+`conn:wallpaper()`
 
-Updates the device so its icon arrangement matches the passed in table.
+- returns PNG bytes for the current home screen wallpaper
 
+`conn:devicename()`
 
-#### icon_image
+- returns the device name
 
-Retrives the PNG of the given app's icon. Takes an icon table as paramter.
+`conn:disconnect()`
 
-#### _tostring
+- closes the device connection
 
-Prints the devices name or disconnected if no device.
+### Layout
+
+Fields:
+
+- `dock`
+- `pages`
+- `__source`
+
+Methods:
+
+- `flatten()`
+- `find(query)`
+- `find_all(query)`
+- `find_id(query)`
+- `visit(fn)`
+- `visit_items(fn)`
+- `opaque_items()`
+- `has_opaque_items()`
+- `validate([options])`
+- `remove_item(item)`
+- `move_item_to_page(item, page[, position])`
+- `remove_app(app)`
+- `move_app_to_folder(app, folder)`
+- `move_app_to_page(app, page[, position])`
+
+`find*` methods accept either a plain substring or a Lua pattern.
+
+Mutation:
+
+- `reshape(flat_items[, options])`
+
+`reshape` accepts apps, folders, widgets, and stacks. They are packed as a
+compacted layout using slot footprints. Unknown items are rejected.
+
+`validate({ folder_capacity = N })` reports folder capacity issues when a caller
+provides an explicit limit. `validate({ dock_capacity = N, page_capacity = M })`
+reports compacted slot-capacity issues. No device-specific limit is enforced by
+default.
+
+### Item Kinds
+
+`App`
+
+- first-class move-only item
+- field editing, creation, and deletion are unsupported
+
+`Folder`
+
+- first-class movable container
+- children live in a flat `folder.items` list
+- apps can move into and out of folders
+- creation and deletion are unsupported
+- empty folders are allowed
+- `count()` returns the number of contained items
+
+`Widget`
+
+- movable atomic opaque item
+- `gridSize` metadata is parsed when present
+- `grid_size()`, `slot_size()`, and `slot_count()` expose verified slot dimensions
+
+`Stack`
+
+- movable atomic opaque item
+- `gridSize` metadata is parsed when present
+- `grid_size()`, `slot_size()`, and `slot_count()` expose verified slot dimensions
+
+`Unknown`
+
+- opaque preserved fallback for unrecognized item payloads
+
+### Hidden Internal Fields
+
+These exist for round-trip identity/ownership and are not meant as public API:
+
+- `ref`
+- `__store`
+- `__source`
+
+### Optional Features
+
+Optional feature loaders:
+
+- `springboard.features.graphics()`
+- `springboard.features.image()`
+- `springboard.features.itunes()`
+- `springboard.features.cache()`
+
+The core library does not load optional JSON, socket, cache, or GraphicsMagick
+dependencies.

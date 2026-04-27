@@ -1,4 +1,14 @@
 .DS_Store
 *~
+\#*\#
+.\#*
 *.o
 *.so
+springboard.plist
+.ios-icon-colors/
+.iTunesJson/
+.iTunesJson.old/
+Prompt.md
+cset.lua
+prints.txt
+scratch/

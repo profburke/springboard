@@ -1,19 +1,22 @@
 -- BUSTED! - what's busted precious? http://olivinelabs.com/busted/
 -- sidenote: i don't condone calling dude's prescious.
+--
+-- Device-backed integration tests. These require a connected iOS device and
+-- should not be treated as the default safety net. Run tests/offline.lua first.
 
-package.path = '../?.lua;' .. package.path
-package.cpath = '../?.so;' .. package.cpath
+package.path = '../?.lua;../?/init.lua;' .. package.path
+package.cpath = '../?.so;../?/?.so;' .. package.cpath
 
 inspect = require "inspect"
 function pp(x,h) print(inspect(x)) return x end
 traceback = debug.traceback
 
-describe("ios-iconlib", function()
-  local ios, conn, icons
+describe("springboard", function()
+  local ios, conn, layout
   local plist_path = "test.plist"
 
   setup(function()
-    ios = require "ios-icons"
+    ios = require "springboard"
   end)
 
   it("loaded ok", function() 
@@ -26,25 +29,26 @@ describe("ios-iconlib", function()
     conn:disconnect()
   end)
 
-  it("retrieves icons", function() 
+  it("retrieves layout", function() 
     conn = ios.connect() 
-    icons = conn:icons()
+    layout = conn:layout()
 
-    assert.not_nil(icons)
-    assert.is.table(icons)
-    assert.is.truthy(#icons > 1)
+    assert.not_nil(layout)
+    assert.is.table(layout)
+    assert.is.table(layout.dock)
+    assert.is.table(layout.pages)
 
     conn:disconnect()
   end)
 
   it("searches", function() 
     conn = ios.connect() 
-    icons = conn:icons()
+    layout = conn:layout()
 
-    assert.not_nil(icons:find("Messages"))
-    assert.is.table(icons:find_all("App"))
+    assert.not_nil(layout:find("Messages"))
+    assert.is.table(layout:find_all("App"))
 
-    local many = icons:find_all(".*")
+    local many = layout:find_all(".*")
     assert.is.truthy(#many > 1)
 
     conn:disconnect()
@@ -54,38 +58,24 @@ describe("ios-iconlib", function()
   -- shit if u are planning on enabling it.
   -- it("sets icons", function() 
   --   conn = ios.connect() 
-  --   icons = conn:icons()
-  --   conn:set_icons(icons)
+  --   layout = conn:layout()
+  --   conn:set_layout(layout)
   --   conn:disconnect()
   -- end)
-
-  -- it("swaps icons", function() 
-  --   conn = ios.connect() 
-  --   icons = conn:icons()
-
-  --   local one = icons[1][1]
-  --   local two = icons[1][2]
-  --   icons:swap(icons[1][1], icons[1][2])
-  --   assert.same(icons[1][1], two)
-  --   assert.same(icons[1][2], one)
-
-  --   conn:disconnect()
-  -- end)
-
 
   it("complains when disconnected", function() 
     conn = ios.connect() 
-    icons = conn:icons()
+    layout = conn:layout()
     conn:disconnect()
 
-    assert.has_error(function() conn:icons() end)
+    assert.has_error(function() conn:layout() end)
   end)
 
   it("saves to disk", function() 
     conn = ios.connect() 
-    icons = conn:icons()
+    layout = conn:layout()
 
-    icons:save_plist(plist_path)
+    layout:save_plist(plist_path)
     data = io.open(plist_path,"r"):read()
 
     conn:disconnect()
@@ -94,18 +84,19 @@ describe("ios-iconlib", function()
   it("loads from disk", function() 
     conn = ios.connect() 
 
-    icons = conn:icons()
+    layout = conn:layout()
     old = ios.load_plist(plist_path)
-    -- same number of pages
-    assert.same(#icons, #old)
-    -- same icons per page
-    for i=1,#icons do
-      assert.same(#icons[i], #old[i])
+    assert.same(#layout.dock, #old.dock)
+    assert.same(#layout.pages, #old.pages)
+    for i=1,#layout.pages do
+      assert.same(#layout.pages[i], #old.pages[i])
     end
-    -- same icon names
-    for i=1,#icons do
-      for j=1,#icons[i] do
-        assert.same(icons[i][j].name, old[i][j].name)
+    for j=1,#layout.dock do
+      assert.same(layout.dock[j].name, old.dock[j].name)
+    end
+    for i=1,#layout.pages do
+      for j=1,#layout.pages[i] do
+        assert.same(layout.pages[i][j].name, old.pages[i][j].name)
       end
     end
 
@@ -116,11 +107,11 @@ describe("ios-iconlib", function()
 
   it("provides image data", function()
     conn = ios.connect() 
-    icons = conn:icons()
+    layout = conn:layout()
 
-    icon = icons[1][1]
-    assert.not_nil(icon.bundleIdentifier)
-    assert.not_nil(conn:icon_image(icon))
+    app = layout.dock[1]
+    assert.not_nil(app.bundleIdentifier)
+    assert.not_nil(conn:app_image(app))
 
     conn:disconnect()
   end)
@@ -129,5 +120,3 @@ end)
 
 
   
-
-

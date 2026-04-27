@@ -3,26 +3,33 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include "ios-icons.h"
+#include "springboard_api.h"
 #include "comms.h"
 #include "save_load.h"
-#include "icons.h"
+#include "layout.h"
+#include "springboard.h"
 
 static const char* kLuaIndexMetaKey = "__index";
 
 static const luaL_Reg iconlib_methods[] = {
   { "connect", ios_connect }, 
   { "ios_errno", ios_errno }, 
-  { "load_plist", ios_load_icons_plist },
+  { "load_plist", ios_load_layout_plist },
+  { NULL, NULL }
+};
+
+static const luaL_Reg item_store_methods[] = {
+  { "__gc", itemStoreHandle_gc },
   { NULL, NULL }
 };
 
 static const luaL_Reg sbconn_methods[] = {
   { "disconnect", ios_disconnect }, 
-  { "icons", ios_get_icons }, 
-  { "get_icons", ios_get_icons }, 
-  { "set_icons", ios_set_icons }, 
-  { "icon_image", ios_icon_imagedata },
+  { "layout", ios_get_layout }, 
+  { "get_layout", ios_get_layout }, 
+  { "save_raw_layout_plist", ios_save_raw_layout_plist },
+  { "set_layout", ios_set_layout }, 
+  { "app_image", ios_app_imagedata },
   { "wallpaper", ios_wallpaper },
   { "devicename", ios_devicename },
   { "__tostring", conn_tostring }, 
@@ -30,8 +37,12 @@ static const luaL_Reg sbconn_methods[] = {
 };
 
 LUALIB_API int
-luaopen_icons_iconlib(lua_State *L)
+luaopen_springboard_iconlib(lua_State *L)
 {
+  luaL_newmetatable(L, kItemStoreHandleID);
+  luaL_setfuncs(L, item_store_methods, 0);
+  lua_pop(L, 1);
+
   luaL_newmetatable(L, kSpringboardConnID); // connection obj
   lua_pushstring(L, kLuaIndexMetaKey);
   lua_pushvalue(L, -2); /* pushes the metatable */

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+  <array>
+    <dict>
+      <key>displayIdentifier</key>
+      <string>com.example.missing-name</string>
+      <key>bundleIdentifier</key>
+      <string>com.example.missing-name</string>
+    </dict>
+    <dict>
+      <key>displayIdentifier</key>
+      <string>com.example.missing-bundle</string>
+      <key>displayName</key>
+      <string>Missing Bundle</string>
+    </dict>
+    <dict>
+      <key>displayName</key>
+      <string>Fixture Folder</string>
+      <key>iconLists</key>
+      <array>
+        <array>
+          <dict>
+            <key>displayIdentifier</key>
+            <string>com.example.folder-child-no-name</string>
+            <key>bundleIdentifier</key>
+            <string>com.example.folder-child-no-name</string>
+          </dict>
+          <dict>
+            <key>displayIdentifier</key>
+            <string>com.example.folder-child-no-bundle</string>
+            <key>displayName</key>
+            <string>Folder Child No Bundle</string>
+          </dict>
+        </array>
+      </array>
+    </dict>
+    <dict>
+      <key>iconType</key>
+      <string>custom</string>
+      <key>displayIdentifier</key>
+      <string>fixture-widget-without-bundle</string>
+      <key>gridSize</key>
+      <string>small</string>
+    </dict>
+  </array>
+</array>
+</plist>

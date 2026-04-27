@@ -10,19 +10,17 @@
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/sbservices.h>
 
-#include "ios-icons.h"
+#include "springboard_api.h"
 #include "comms.h"
-#include "icons.h"
+#include "layout.h"
 
 int idevice_errno = 0;
 
-LUALIB_API int ios_connect(lua_State *L)
-{
+LUALIB_API int ios_connect(lua_State *L) {
   int rc;
   const char* udid = NULL;
 
-  if (lua_gettop(L) > 0)
-  {
+  if (lua_gettop(L) > 0) {
     udid = lua_isnoneornil(L, -1) ? NULL : lua_tostring(L, 1);
     lua_pop(L, 1);    
   }
@@ -41,32 +39,28 @@ LUALIB_API int ios_connect(lua_State *L)
         c->lockdownClient, kSpringboardServices, &c->lockdownService))
      
      && SBSERVICES_E_SUCCESS == (rc = sbservices_client_new(
-          c->device, c->lockdownService,  &c->sbClient))) 
-  {
-
+          c->device, c->lockdownService,  &c->sbClient))) {
+    
     return 1;
-  } 
-  else 
-  {
-      ios_disconnect(L);
-      idevice_errno = rc;
-
-      lua_pushfstring(L, "%s code=%d", kConnectFail, rc);
-      lua_error(L);
-      
-      return 0; // never reached
+  } else {
+    ios_disconnect(L);
+    idevice_errno = rc;
+    
+    lua_pushfstring(L, "%s code=%d", kConnectFail, rc);
+    lua_error(L);
+    
+    return 0; // never reached
   }
 }
 
-LUALIB_API int ios_disconnect(lua_State *L)
-{
+LUALIB_API int ios_disconnect(lua_State *L) {
   SBConnection* c = (SBConnection*)luaL_checkudata(L, 1, kSpringboardConnID);
   if (c->sbClient != NULL) { sbservices_client_free(c->sbClient); }
   if (c->lockdownService != NULL) { lockdownd_service_descriptor_free(c->lockdownService); }
   if (c->lockdownClient != NULL) { lockdownd_client_free(c->lockdownClient); }
   if (c->device != NULL) { idevice_free(c->device); }
   memset(c, 0, sizeof(SBConnection));
-
+  
   lua_pop(L, 1); // connection
   return 1;
 }
@@ -98,16 +92,12 @@ int conn_tostring(lua_State *L) {
   return 1;
 }
 
-
-int ios_devicename(lua_State *L)
-{
+int ios_devicename(lua_State *L) {
   putDeviceNameOnStack(L, 0);
   return 1;
 }
 
-
-int ios_errno(lua_State *L)
-{
+int ios_errno(lua_State *L) {
     lua_pushinteger(L, idevice_errno);
     return 1;
 }

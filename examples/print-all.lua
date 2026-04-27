@@ -1,8 +1,8 @@
 #!/usr/bin/env lua
 
-status, ios = pcall(require, 'ios-icons')
+status, ios = pcall(require, 'springboard')
 if (not status) then
-   print "Could not find the 'ios-icons' library."
+   print "Could not find the 'springboard' library."
    print "Check to verify it was installed."
    os.exit(1)
 end
@@ -13,8 +13,7 @@ if (not status) then
    os.exit(1)
 end
 
-icons = conn:icons()
-dock = icons:dock()
+layout = conn:layout()
 
 print "All the apps on all your device's pages:"
-print(icons)
+print(layout)

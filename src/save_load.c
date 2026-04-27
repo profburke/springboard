@@ -8,6 +8,7 @@
 #include <plist/plist.h>
 
 #include "springboard.h"
+#include "layout.h"
 
 void
 raise_lua_stdio_err(lua_State *L)
@@ -25,7 +26,7 @@ raise_lua_nomem(lua_State *L)
 }
 
 int
-savePList(plist_t* iconState, const char* path)
+savePList(plist_t* layoutState, const char* path)
 {
   char* xml = NULL;
   uint32_t len = 0;
@@ -34,7 +35,7 @@ savePList(plist_t* iconState, const char* path)
   fd = fopen(path, "w");
   if (fd == NULL) { return 1; }
 
-  plist_to_xml(iconState, &xml, &len);
+  plist_to_xml(layoutState, &xml, &len);
 
   fwrite(xml, sizeof(char), len, fd);
   fflush(fd);
@@ -45,17 +46,17 @@ savePList(plist_t* iconState, const char* path)
 }
 
 int 
-ios_save_icons_plist(lua_State *L)
+ios_save_layout_plist(lua_State *L)
 {
-  plist_t iconState;
+  plist_t layoutState;
   const char* path;
 
   path = luaL_checkstring(L, -1);
   lua_pop(L, 1);
-  iconState = ios_table_to_plist(L); 
+  layoutState = ios_table_to_plist(L); 
   lua_pop(L, 1);
 
-  if (savePList(iconState, path))
+  if (savePList(layoutState, path))
   {
     luaL_error(L, "failed to save: %s", 
                   strerror(errno));
@@ -69,8 +70,8 @@ fslurp(const char* path)
 {
   char* data = NULL;
   uint32_t len = 0;
+  size_t read_len;
   struct stat st;
-  int rc;
   FILE* fd;
 
   if (stat(path, &st)) { return NULL; }
@@ -79,21 +80,28 @@ fslurp(const char* path)
   fd = fopen(path, "r");
   if (fd == NULL) { return NULL; }
 
-  data = malloc(sizeof(char*) * (len + 1));
+  data = malloc(sizeof(char) * (len + 1));
   if (data == NULL) { return NULL; }
 
-  fread(data, len, 1, fd);
+  read_len = fread(data, sizeof(char), len, fd);
   fclose(fd);
-  data[len - 1] = '\0';  
+  if (read_len != len) {
+    free(data);
+    errno = EIO;
+    return NULL;
+  }
+
+  data[len] = '\0';
   return data;
 }
 
 int 
-ios_load_icons_plist(lua_State *L)
+ios_load_layout_plist(lua_State *L)
 {
-  plist_t iconState = NULL;
+  plist_t layoutState = NULL;
   char* xml = NULL;
   const char* path;
+  int rc;
 
   path = lua_tostring(L, -1);
   xml = fslurp(path);
@@ -103,11 +111,13 @@ ios_load_icons_plist(lua_State *L)
                   strerror(errno));
   }
 
-  plist_from_xml(xml, strlen(xml), &iconState);
+  plist_from_xml(xml, strlen(xml), &layoutState);
   free(xml);
 
   lua_pop(L, 1);
 
-  return ios_plist_to_table(L, iconState);
+  rc = ios_plist_to_table(L, layoutState, kSourceFile);
+  lua_pushcfunction(L, ios_save_layout_plist);
+  lua_setfield(L, -2, kSavePlistMethodName);
+  return rc;
 }
-
