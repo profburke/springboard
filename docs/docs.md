@@ -73,6 +73,7 @@ Fields:
 
 Methods:
 
+- `clone()`
 - `flatten()`
 - `find(query)`
 - `find_all(query)`
@@ -81,9 +82,15 @@ Methods:
 - `visit_items(fn)`
 - `opaque_items()`
 - `has_opaque_items()`
+- `find_page_of(item)`
+- `find_container_of(item)`
 - `validate([options])`
 - `remove_item(item)`
+- `move(item, page[, position])`
 - `move_item_to_page(item, page[, position])`
+- `move_before(item, anchor)`
+- `move_after(item, anchor)`
+- `transaction(fn)`
 - `remove_app(app)`
 - `move_app_to_folder(app, folder)`
 - `move_app_to_page(app, page[, position])`
@@ -101,6 +108,12 @@ compacted layout using slot footprints. Unknown items are rejected.
 provides an explicit limit. `validate({ dock_capacity = N, page_capacity = M })`
 reports compacted slot-capacity issues. No device-specific limit is enforced by
 default.
+
+`move_before` and `move_after` place an item relative to another item. If the
+anchor is inside a folder, apps can move into that folder through the same API.
+
+`transaction(fn)` runs `fn` against a cloned working layout and commits only on
+success.
 
 ### Item Kinds
 

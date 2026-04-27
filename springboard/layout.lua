@@ -13,6 +13,27 @@ local function wrap_page(items)
    return setmetatable(items or {}, page.__meta)
 end
 
+local function clone_item(item)
+   if type(item) ~= "table" then
+      return item
+   end
+
+   local copy = {}
+   for key, value in pairs(item) do
+      if key == "items" and kind.is(item, "folder") then
+         local child_items = {}
+         for index, child in ipairs(value or {}) do
+            child_items[index] = clone_item(child)
+         end
+         copy[key] = child_items
+      else
+         copy[key] = value
+      end
+   end
+
+   return setmetatable(copy, getmetatable(item))
+end
+
 local function each_page(layout, visitor)
    visitor(layout.dock, true)
    for _, current in ipairs(layout.pages) do
@@ -122,6 +143,76 @@ local function remove_from_items(items, target)
    return false
 end
 
+local function remove_from_container(container, index)
+   if kind.is(container, "folder") then
+      table.remove(container.items, index)
+      return
+   end
+
+   table.remove(container, index)
+end
+
+local function insert_into_container(container, index, item)
+   if kind.is(container, "folder") then
+      if not kind.is(item, "app") then
+         error(string.format("folder insertion only supports app items; found %s", kind.of(item)))
+      end
+
+      container.items = container.items or {}
+      table.insert(container.items, index or (#container.items + 1), item)
+      return
+   end
+
+   table.insert(container, index or (#container + 1), item)
+end
+
+local function find_item_location_in_items(items, target, page_ref, parent_container)
+   for index, value in ipairs(items) do
+      if value == target then
+         return {
+            page = page_ref,
+            container = parent_container or items,
+            index = index,
+         }
+      end
+
+      if kind.is(value, "folder") then
+         local nested = find_item_location_in_items(value.items or {}, target, page_ref, value)
+         if nested then
+            return nested
+         end
+      end
+   end
+
+   return nil
+end
+
+local function find_item_location(tab, target)
+   local location = find_item_location_in_items(tab.dock, target, tab.dock, nil)
+   if location then
+      return location
+   end
+
+   for _, current in ipairs(tab.pages) do
+      location = find_item_location_in_items(current, target, current, nil)
+      if location then
+         return location
+      end
+   end
+
+   return nil
+end
+
+local function apply_working_layout(target, source)
+   for key in pairs(target) do
+      target[key] = nil
+   end
+
+   for key, value in pairs(source) do
+      target[key] = value
+   end
+end
+
 local function assert_movable_container_items(items, operation)
    for idx, value in ipairs(items) do
       if not is_movable_container_item(value) then
@@ -208,6 +299,32 @@ layout.new = function(dock, pages)
    }, layout_mt)
 end
 
+layout.clone = function(tab)
+   local pages = {}
+   local dock = {}
+
+   for index, item in ipairs(tab.dock or {}) do
+      dock[index] = clone_item(item)
+   end
+
+   for page_index, current in ipairs(tab.pages or {}) do
+      local cloned_page = {}
+      for item_index, item in ipairs(current) do
+         cloned_page[item_index] = clone_item(item)
+      end
+      pages[page_index] = wrap_page(cloned_page)
+   end
+
+   local copy = layout.new(wrap_page(dock), pages)
+   for key, value in pairs(tab) do
+      if key ~= "dock" and key ~= "pages" then
+         copy[key] = value
+      end
+   end
+
+   return copy
+end
+
 layout.flatten = function(tab)
    local insert = table.insert
    local result = {}
@@ -285,6 +402,16 @@ end
 
 layout.has_opaque_items = function(tab)
    return #tab:opaque_items() > 0
+end
+
+layout.find_page_of = function(tab, item)
+   local location = find_item_location(tab, item)
+   return location and location.page or nil
+end
+
+layout.find_container_of = function(tab, item)
+   local location = find_item_location(tab, item)
+   return location and location.container or nil
 end
 
 layout.validate = function(tab, options)
@@ -392,6 +519,77 @@ layout.move_item_to_page = function(tab, item, target_page, position)
 
    table.insert(target_page, position or (#target_page + 1), item)
    return true
+end
+
+layout.move = function(tab, item, target_page, position)
+   return tab:move_item_to_page(item, target_page, position)
+end
+
+layout.move_before = function(tab, item, anchor)
+   if item == anchor then
+      return true
+   end
+
+   local source = find_item_location(tab, item)
+   if not source then
+      return false
+   end
+
+   local target = find_item_location(tab, anchor)
+   if not target then
+      return false
+   end
+
+   local insert_index = target.index
+   if source.container == target.container and source.index < target.index then
+      insert_index = insert_index - 1
+   end
+
+   remove_from_container(source.container, source.index)
+   insert_into_container(target.container, insert_index, item)
+   return true
+end
+
+layout.move_after = function(tab, item, anchor)
+   if item == anchor then
+      return true
+   end
+
+   local source = find_item_location(tab, item)
+   if not source then
+      return false
+   end
+
+   local target = find_item_location(tab, anchor)
+   if not target then
+      return false
+   end
+
+   local insert_index = target.index + 1
+   if source.container == target.container and source.index < target.index then
+      insert_index = insert_index - 1
+   end
+
+   remove_from_container(source.container, source.index)
+   insert_into_container(target.container, insert_index, item)
+   return true
+end
+
+layout.transaction = function(tab, callback)
+   assert(type(callback) == "function", "transaction callback must be a function")
+
+   local working = tab:clone()
+   local ok, result = pcall(callback, working)
+   if not ok then
+      return false, result
+   end
+
+   if result == false then
+      return false
+   end
+
+   apply_working_layout(tab, working)
+   return true, result
 end
 
 layout.reshape = function(tab, options)

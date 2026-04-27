@@ -142,6 +142,87 @@ if sample_widget then
   assert(sample_widget.elementType == "widget")
 end
 
+local api_layout = springboard.load_plist(fixture)
+local api_apps = api_layout:flatten()
+local api_folder = first_folder(api_layout)
+local api_top_app = api_apps[1]
+local api_second_app = api_apps[2]
+local api_folder_app = api_folder and api_folder.items[1] or nil
+local api_widget
+api_layout:visit_items(function(item)
+  if not api_widget and kind.is(item, "widget") then
+    api_widget = item
+  end
+end)
+
+if api_top_app and api_second_app then
+  local cloned = api_layout:clone()
+  assert(kind.of(cloned) == "layout")
+  assert(cloned ~= api_layout)
+  assert(cloned.dock ~= api_layout.dock)
+  assert(cloned.dock[1] ~= api_layout.dock[1])
+  assert(cloned.dock[1].id == api_layout.dock[1].id)
+  assert(cloned:move_after(cloned.dock[1], cloned.dock[2]) == true)
+  assert(cloned.dock[2].id == api_top_app.id)
+  assert(api_layout.dock[1].id == api_top_app.id)
+end
+
+if api_top_app and api_folder and api_folder_app then
+  assert(api_layout:find_container_of(api_top_app) == api_layout.dock)
+  assert(api_layout:find_page_of(api_top_app) == api_layout.dock)
+  assert(api_layout:find_container_of(api_folder_app) == api_folder)
+  assert(api_layout:find_page_of(api_folder_app) ~= nil)
+  assert(api_layout:move_before(api_top_app, api_folder_app) == true)
+  assert(api_layout:find_container_of(api_top_app) == api_folder)
+  assert(api_folder.items[1] == api_top_app)
+end
+
+if api_widget and api_second_app then
+  local widget_page = api_layout:find_page_of(api_widget)
+  assert(widget_page ~= nil)
+  assert(api_layout:find_container_of(api_widget) == widget_page)
+  assert(api_layout:move_before(api_second_app, api_widget) == true)
+  assert(api_layout:find_page_of(api_second_app) == widget_page)
+  assert(api_layout:find_container_of(api_second_app) == widget_page)
+  assert(api_layout:move_after(api_second_app, api_widget) == true)
+end
+
+local transaction_layout = springboard.load_plist(fixture)
+local transaction_first = transaction_layout.dock[1]
+local transaction_second = transaction_layout.dock[2]
+local ok_tx, tx_result = transaction_layout:transaction(function(working)
+  assert(working ~= transaction_layout)
+  assert(working:move_after(working.dock[1], working.dock[2]) == true)
+  return "committed"
+end)
+assert(ok_tx == true)
+assert(tx_result == "committed")
+assert(transaction_layout.dock[2].id == transaction_first.id)
+assert(transaction_layout.dock[1].id == transaction_second.id)
+
+local rollback_layout = springboard.load_plist(fixture)
+local rollback_first = rollback_layout.dock[1]
+local rollback_second = rollback_layout.dock[2]
+local rollback_ok, rollback_err = rollback_layout:transaction(function(working)
+  working:move_after(working.dock[1], working.dock[2])
+  error("boom")
+end)
+assert(rollback_ok == false)
+assert(rollback_err:match("boom"))
+assert(rollback_layout.dock[1].id == rollback_first.id)
+assert(rollback_layout.dock[2].id == rollback_second.id)
+
+local cancel_layout = springboard.load_plist(fixture)
+local cancel_first = cancel_layout.dock[1]
+local cancel_second = cancel_layout.dock[2]
+local cancel_ok = cancel_layout:transaction(function(working)
+  working:move_after(working.dock[1], working.dock[2])
+  return false
+end)
+assert(cancel_ok == false)
+assert(cancel_layout.dock[1].id == cancel_first.id)
+assert(cancel_layout.dock[2].id == cancel_second.id)
+
 local a, b, c = apps[1], apps[2], apps[3]
 if a and b and c then
   local reshaped = layout.reshape({ a, b, c })

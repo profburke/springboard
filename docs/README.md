@@ -155,12 +155,19 @@ The search helpers accept either a plain substring or a Lua pattern.
 
 All-item helpers:
 
+- `layout:clone()`
 - `layout:visit_items(fn)`
 - `layout:opaque_items()`
 - `layout:has_opaque_items()`
+- `layout:find_page_of(item)`
+- `layout:find_container_of(item)`
 - `layout:validate([options])`
 - `layout:remove_item(item)`
+- `layout:move(item, page[, position])`
 - `layout:move_item_to_page(item, page[, position])`
+- `layout:move_before(item, anchor)`
+- `layout:move_after(item, anchor)`
+- `layout:transaction(fn)`
 
 Folder/app mutation helpers:
 
@@ -179,6 +186,13 @@ widgets, and stacks move atomically. Unknown items are still rejected.
 slot usage. `layout.reshape(..., { dock_capacity = N, page_capacity = M })`
 packs items by slot footprint using defaults of dock `4` and page `24`.
 Override these for device-specific targets, especially iPad layouts.
+
+`layout:move_before(...)` and `layout:move_after(...)` move an item relative to
+another item, including moving apps into folders when the anchor is inside a
+folder.
+
+`layout:transaction(fn)` runs `fn` against a cloned working layout and commits
+the result only if `fn` returns normally and does not return `false`.
 
 ## Device API
 
