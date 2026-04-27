@@ -161,12 +161,16 @@ All-item helpers:
 - `layout:has_opaque_items()`
 - `layout:find_page_of(item)`
 - `layout:find_container_of(item)`
+- `layout:append_page([index])`
 - `layout:validate([options])`
 - `layout:remove_item(item)`
 - `layout:move(item, page[, position])`
 - `layout:move_item_to_page(item, page[, position])`
+- `layout:move_item_to_new_page(item[, index])`
 - `layout:move_before(item, anchor)`
 - `layout:move_after(item, anchor)`
+- `layout:swap(left, right)`
+- `layout:pack_pages([options])`
 - `layout:transaction(fn)`
 
 Folder/app mutation helpers:
@@ -197,6 +201,13 @@ folder.
 `layout:move_app_before_in_folder(...)` and
 `layout:move_app_after_in_folder(...)` provide explicit folder-child placement
 without relying on generic relative moves.
+
+`layout:move_item_to_new_page(...)` creates a page and moves the item onto it.
+`layout:append_page()` creates an empty page.
+
+`layout:swap(...)` exchanges two items only when each item is valid in the
+other item's container. `layout:pack_pages(...)` compacts the current top-level
+item order back into dock/pages using `reshape` slot rules.
 
 `layout:transaction(fn)` runs `fn` against a cloned working layout and commits
 the result only if `fn` returns normally and does not return `false`.

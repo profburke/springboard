@@ -232,6 +232,76 @@ assert(cancel_ok == false)
 assert(cancel_layout.dock[1].id == cancel_first.id)
 assert(cancel_layout.dock[2].id == cancel_second.id)
 
+local page_api_layout = springboard.load_plist(fixture)
+local page_count_before = #page_api_layout.pages
+local appended_page = page_api_layout:append_page()
+assert(kind.of(appended_page) == "page")
+assert(#appended_page == 0)
+assert(#page_api_layout.pages == page_count_before + 1)
+assert(page_api_layout.pages[#page_api_layout.pages] == appended_page)
+
+local new_page_layout = springboard.load_plist(fixture)
+local new_page_item = new_page_layout.dock[1]
+local inserted_page = new_page_layout:move_item_to_new_page(new_page_item, 1)
+assert(kind.of(inserted_page) == "page")
+assert(new_page_layout.pages[1] == inserted_page)
+assert(inserted_page[1] == new_page_item)
+assert(new_page_layout:find_page_of(new_page_item) == inserted_page)
+
+local swap_layout = springboard.load_plist(fixture)
+local swap_first = swap_layout.dock[1]
+local swap_second = swap_layout.dock[2]
+assert(swap_layout:swap(swap_first, swap_second) == true)
+assert(swap_layout.dock[1] == swap_second)
+assert(swap_layout.dock[2] == swap_first)
+
+local swap_folder_layout = springboard.load_plist(fixture)
+local swap_folder = first_folder(swap_folder_layout)
+local swap_folder_child = swap_folder and swap_folder.items[1] or nil
+local swap_dock_app = swap_folder_layout.dock[1]
+if swap_folder and swap_folder_child and swap_dock_app then
+  assert(swap_layout ~= nil)
+  assert(swap_folder_layout:swap(swap_dock_app, swap_folder_child) == true)
+  assert(swap_folder.items[1] == swap_dock_app)
+  assert(swap_folder_layout.dock[1] == swap_folder_child)
+end
+
+local swap_invalid_layout = springboard.load_plist(fixture)
+local swap_invalid_folder = first_folder(swap_invalid_layout)
+local swap_invalid_child = swap_invalid_folder and swap_invalid_folder.items[1] or nil
+local swap_invalid_widget
+swap_invalid_layout:visit_items(function(item)
+  if not swap_invalid_widget and kind.is(item, "widget") then
+    swap_invalid_widget = item
+  end
+end)
+if swap_invalid_child and swap_invalid_widget then
+  local swap_ok, swap_err = pcall(function()
+    swap_invalid_layout:swap(swap_invalid_child, swap_invalid_widget)
+  end)
+  assert(swap_ok == false)
+  assert(swap_err:match("cannot place widget into folder"))
+end
+
+local pack_layout = springboard.layout.new(
+  {},
+  {
+    { apps[1] },
+    { apps[2] },
+    { apps[3] },
+    { apps[4] },
+    { apps[5] },
+  }
+)
+pack_layout.__source = "file"
+pack_layout:pack_pages({ dock_capacity = 4, page_capacity = 24 })
+assert(#pack_layout.dock == 4)
+assert(pack_layout.dock[1] == apps[1])
+assert(pack_layout.dock[4] == apps[4])
+assert(#pack_layout.pages == 1)
+assert(pack_layout.pages[1][1] == apps[5])
+assert(pack_layout.__source == "file")
+
 local a, b, c = apps[1], apps[2], apps[3]
 if a and b and c then
   local reshaped = layout.reshape({ a, b, c })

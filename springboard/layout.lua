@@ -172,6 +172,26 @@ local function insert_into_container(container, index, item)
    table.insert(container, index or (#container + 1), item)
 end
 
+local function container_items(container)
+   if kind.is(container, "folder") then
+      return container.items
+   end
+
+   return container
+end
+
+local function can_insert_into_container(tab, container, item)
+   if kind.is(container, "folder") then
+      return kind.is(item, "app")
+   end
+
+   if container == tab.dock then
+      return item_slot_count(item) == 1
+   end
+
+   return is_movable_container_item(item)
+end
+
 local function ensure_folder_anchor(folder, anchor, operation)
    folder.items = folder.items or {}
 
@@ -432,6 +452,18 @@ layout.find_container_of = function(tab, item)
    return location and location.container or nil
 end
 
+layout.append_page = function(tab, index)
+   local new_page = wrap_page({})
+   if index == nil then
+      table.insert(tab.pages, new_page)
+   else
+      assert(type(index) == "number", "append_page index must be a number")
+      table.insert(tab.pages, index, new_page)
+   end
+
+   return new_page
+end
+
 layout.validate = function(tab, options)
    local issues = {}
    local folder_capacity = options and options.folder_capacity
@@ -557,6 +589,25 @@ layout.move = function(tab, item, target_page, position)
    return tab:move_item_to_page(item, target_page, position)
 end
 
+layout.move_item_to_new_page = function(tab, item, index)
+   if not is_movable_container_item(item) then
+      error(string.format("layout.move_item_to_new_page only supports movable items; found %s", kind.of(item)))
+   end
+
+   if not find_item_location(tab, item) then
+      return false
+   end
+
+   local new_page = tab:append_page(index)
+   if not tab:remove_item(item) then
+      table.remove(tab.pages, index or #tab.pages)
+      return false
+   end
+
+   table.insert(new_page, item)
+   return new_page
+end
+
 layout.move_before = function(tab, item, anchor)
    if item == anchor then
       return true
@@ -607,6 +658,43 @@ layout.move_after = function(tab, item, anchor)
    return true
 end
 
+layout.swap = function(tab, left, right)
+   if left == right then
+      return true
+   end
+
+   local left_location = find_item_location(tab, left)
+   if not left_location then
+      return false
+   end
+
+   local right_location = find_item_location(tab, right)
+   if not right_location then
+      return false
+   end
+
+   if left_location.container == right_location.container then
+      local container = container_items(left_location.container)
+      container[left_location.index], container[right_location.index] =
+         container[right_location.index], container[left_location.index]
+      return true
+   end
+
+   if not can_insert_into_container(tab, left_location.container, right) then
+      error(string.format("layout.swap cannot place %s into %s", kind.of(right), kind.of(left_location.container)))
+   end
+
+   if not can_insert_into_container(tab, right_location.container, left) then
+      error(string.format("layout.swap cannot place %s into %s", kind.of(left), kind.of(right_location.container)))
+   end
+
+   remove_from_container(left_location.container, left_location.index)
+   remove_from_container(right_location.container, right_location.index)
+   insert_into_container(left_location.container, left_location.index, right)
+   insert_into_container(right_location.container, right_location.index, left)
+   return true
+end
+
 layout.transaction = function(tab, callback)
    assert(type(callback) == "function", "transaction callback must be a function")
 
@@ -622,6 +710,33 @@ layout.transaction = function(tab, callback)
 
    apply_working_layout(tab, working)
    return true, result
+end
+
+layout.pack_pages = function(tab, options)
+   local compacted = {}
+
+   each_page(tab, function(current)
+      for _, item in ipairs(current) do
+         if not is_movable_container_item(item) then
+            error(string.format(
+               "layout.pack_pages only supports app, folder, widget, and stack items; found %s",
+               kind.of(item)
+            ))
+         end
+
+         table.insert(compacted, item)
+      end
+   end)
+
+   local packed = layout.reshape(compacted, options)
+   for key, value in pairs(tab) do
+      if key ~= "dock" and key ~= "pages" then
+         packed[key] = value
+      end
+   end
+
+   apply_working_layout(tab, packed)
+   return tab
 end
 
 layout.reshape = function(tab, options)

@@ -84,12 +84,16 @@ Methods:
 - `has_opaque_items()`
 - `find_page_of(item)`
 - `find_container_of(item)`
+- `append_page([index])`
 - `validate([options])`
 - `remove_item(item)`
 - `move(item, page[, position])`
 - `move_item_to_page(item, page[, position])`
+- `move_item_to_new_page(item[, index])`
 - `move_before(item, anchor)`
 - `move_after(item, anchor)`
+- `swap(left, right)`
+- `pack_pages([options])`
 - `transaction(fn)`
 - `remove_app(app)`
 - `move_app_to_folder(app, folder[, position])`
@@ -117,6 +121,13 @@ anchor is inside a folder, apps can move into that folder through the same API.
 `move_app_to_folder` accepts an optional insertion position. The explicit
 `move_app_before_in_folder` and `move_app_after_in_folder` helpers target
 folder-child ordering directly.
+
+`move_item_to_new_page` creates a page and moves the item there. `append_page`
+creates an empty page at the end or at a specified index.
+
+`swap` exchanges two items only if both destination containers can legally hold
+the other item. `pack_pages` compacts the current top-level item order using
+`reshape` slot rules.
 
 `transaction(fn)` runs `fn` against a cloned working layout and commits only on
 success.
