@@ -302,6 +302,86 @@ assert(#pack_layout.pages == 1)
 assert(pack_layout.pages[1][1] == apps[5])
 assert(pack_layout.__source == "file")
 
+local relative_layout = springboard.load_plist(fixture)
+local relative_folder = first_folder(relative_layout)
+local relative_folder_child = relative_folder and relative_folder.items[1] or nil
+local relative_app = relative_layout.dock[1]
+local relative_anchor = relative_layout.pages[1] and relative_layout.pages[1][1] or nil
+if relative_folder and relative_folder_child and relative_app and relative_anchor then
+  assert(relative_layout:move_app_out_of_folder(relative_folder_child, relative_layout.dock) == true)
+  assert(relative_layout.dock[#relative_layout.dock] == relative_folder_child)
+  assert(relative_layout:move_app_before_item(relative_app, relative_anchor) == true)
+  assert(relative_layout.pages[1][1] == relative_app)
+  assert(relative_layout:move_app_after_item(relative_app, relative_anchor) == true)
+  assert(relative_layout.pages[1][2] == relative_app)
+end
+
+local batch_layout = springboard.load_plist(fixture)
+local batch_app_one = batch_layout.dock[1]
+local batch_app_two = batch_layout.dock[2]
+local batch_target_page = batch_layout.pages[1]
+assert(batch_layout:move_all({ batch_app_one, batch_app_two }, batch_target_page, 1) == true)
+assert(batch_target_page[1] == batch_app_one)
+assert(batch_target_page[2] == batch_app_two)
+
+local matching_layout = springboard.load_plist(fixture)
+local matching_page = matching_layout:append_page()
+assert(matching_layout:move_matching("Safari", matching_page, 1) == true)
+assert(matching_page[1].name == "Safari")
+
+local folder_batch_layout = springboard.load_plist(fixture)
+local folder_batch_folder = first_folder(folder_batch_layout)
+local folder_batch_apps = folder_batch_layout:flatten()
+if folder_batch_folder and #folder_batch_apps >= 2 then
+  assert(folder_batch_layout:move_apps_into_folder({ folder_batch_apps[1], folder_batch_apps[2] }, folder_batch_folder, 1) == true)
+  assert(folder_batch_folder.items[1] == folder_batch_apps[1])
+  assert(folder_batch_folder.items[2] == folder_batch_apps[2])
+end
+
+local page_move_layout = springboard.load_plist(fixture)
+local page_move_item = page_move_layout.dock[1]
+local page_move_target = page_move_layout.pages[1]
+assert(page_move_layout:move_to_page_end(page_move_item, page_move_target) == true)
+assert(page_move_target[#page_move_target] == page_move_item)
+assert(page_move_layout:move_to_page_start(page_move_item, page_move_target) == true)
+assert(page_move_target[1] == page_move_item)
+assert(page_move_layout:move_to_dock(page_move_item, 1) == true)
+assert(page_move_layout.dock[1] == page_move_item)
+
+local preview_layout = springboard.load_plist(fixture)
+local preview_first = preview_layout.dock[1]
+local preview_second = preview_layout.dock[2]
+local preview_ok, preview_working, preview_label = preview_layout:preview(function(working)
+  working:move_after(working.dock[1], working.dock[2])
+  return "preview"
+end)
+assert(preview_ok == true)
+assert(preview_label == "preview")
+assert(preview_working.dock[2].id == preview_first.id)
+assert(preview_layout.dock[1].id == preview_first.id)
+assert(preview_layout.dock[2].id == preview_second.id)
+
+local transact_layout = springboard.load_plist(fixture)
+local transact_item = transact_layout.dock[1]
+local transact_target = transact_layout.pages[1]
+local transact_ok, transact_result = transact_layout:transact_move(transact_item, transact_target, 1)
+assert(transact_ok == true)
+assert(transact_result == true)
+assert(transact_layout.pages[1][1].id == transact_item.id)
+
+local transact_fail_layout = springboard.load_plist(fixture)
+local transact_fail_item = transact_fail_layout.dock[1]
+local transact_fail_target = transact_fail_layout.pages[1]
+local fail_ok, fail_issues = transact_fail_layout:transact_move(
+  transact_fail_item,
+  transact_fail_target,
+  1,
+  { page_capacity = 0 }
+)
+assert(fail_ok == false)
+assert(type(fail_issues) == "string" or type(fail_issues) == "table")
+assert(transact_fail_layout.dock[1].id == transact_fail_item.id)
+
 local a, b, c = apps[1], apps[2], apps[3]
 if a and b and c then
   local reshaped = layout.reshape({ a, b, c })

@@ -92,13 +92,24 @@ Methods:
 - `move_item_to_new_page(item[, index])`
 - `move_before(item, anchor)`
 - `move_after(item, anchor)`
+- `move_all(items, page[, position])`
+- `move_matching(query, page[, position])`
+- `move_to_page_start(item, page)`
+- `move_to_page_end(item, page)`
+- `move_to_dock(item[, position])`
 - `swap(left, right)`
 - `pack_pages([options])`
+- `preview(fn)`
+- `transact_move(item, page[, position[, validate_options]])`
 - `transaction(fn)`
 - `remove_app(app)`
 - `move_app_to_folder(app, folder[, position])`
 - `move_app_before_in_folder(app, folder, anchor)`
 - `move_app_after_in_folder(app, folder, anchor)`
+- `move_apps_into_folder(apps, folder[, position])`
+- `move_app_out_of_folder(app, page[, position])`
+- `move_app_before_item(app, anchor)`
+- `move_app_after_item(app, anchor)`
 - `move_app_to_page(app, page[, position])`
 
 `find*` methods accept either a plain substring or a Lua pattern.
@@ -128,6 +139,13 @@ creates an empty page at the end or at a specified index.
 `swap` exchanges two items only if both destination containers can legally hold
 the other item. `pack_pages` compacts the current top-level item order using
 `reshape` slot rules.
+
+`move_all` and `move_matching` provide bulk movement. `move_matching` accepts a
+string query or predicate function.
+
+`preview` runs against a cloned working layout and never mutates the original.
+`transact_move` performs a single move via the transaction path and can validate
+before commit.
 
 `transaction(fn)` runs `fn` against a cloned working layout and commits only on
 success.

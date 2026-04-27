@@ -75,6 +75,21 @@ local function contains_or_matches(value, pat)
       or string.find(value, pat) ~= nil
 end
 
+local function matches_query(item, query)
+   if type(query) == "function" then
+      return query(item) == true
+   end
+
+   if type(query) ~= "string" then
+      error(string.format("query must be a string or function; found %s", type(query)))
+   end
+
+   return contains_or_matches(item.name or "", query)
+      or contains_or_matches(item.id or "", query)
+      or contains_or_matches(item.ref or "", query)
+      or contains_or_matches(item.widgetIdentifier or "", query)
+end
+
 local function is_movable_container_item(value)
    return kind.is(value, "app")
       or kind.is(value, "folder")
@@ -249,6 +264,45 @@ local function apply_working_layout(target, source)
    for key, value in pairs(source) do
       target[key] = value
    end
+end
+
+local function page_index_of(tab, target_page)
+   if target_page == tab.dock then
+      return 0
+   end
+
+   for index, current in ipairs(tab.pages) do
+      if current == target_page then
+         return index
+      end
+   end
+
+   return nil
+end
+
+local function resolve_working_page(tab, working, target_page)
+   local page_index = page_index_of(tab, target_page)
+   if page_index == nil then
+      error("target page does not belong to layout")
+   end
+
+   if page_index == 0 then
+      return working.dock
+   end
+
+   return working.pages[page_index]
+end
+
+local function find_item_by_ref(tab, ref)
+   local found
+
+   tab:visit_items(function(item)
+      if not found and item.ref == ref then
+         found = item
+      end
+   end)
+
+   return found
 end
 
 local function assert_movable_container_items(items, operation)
@@ -552,6 +606,16 @@ layout.move_app_to_page = function(tab, app, target_page, position)
    return tab:move_item_to_page(app, target_page, position)
 end
 
+layout.move_app_out_of_folder = function(tab, app, target_page, position)
+   assert_app_item(app, "layout.move_app_out_of_folder")
+
+   if not kind.is(tab:find_container_of(app), "folder") then
+      return false
+   end
+
+   return tab:move_app_to_page(app, target_page, position)
+end
+
 layout.remove_item = function(tab, item)
    if not is_movable_container_item(item) then
       error(string.format("layout.remove_item only supports movable items; found %s", kind.of(item)))
@@ -587,6 +651,18 @@ end
 
 layout.move = function(tab, item, target_page, position)
    return tab:move_item_to_page(item, target_page, position)
+end
+
+layout.move_to_page_start = function(tab, item, target_page)
+   return tab:move_item_to_page(item, target_page, 1)
+end
+
+layout.move_to_page_end = function(tab, item, target_page)
+   return tab:move_item_to_page(item, target_page)
+end
+
+layout.move_to_dock = function(tab, item, position)
+   return tab:move_item_to_page(item, tab.dock, position)
 end
 
 layout.move_item_to_new_page = function(tab, item, index)
@@ -658,6 +734,16 @@ layout.move_after = function(tab, item, anchor)
    return true
 end
 
+layout.move_app_before_item = function(tab, app, anchor)
+   assert_app_item(app, "layout.move_app_before_item")
+   return tab:move_before(app, anchor)
+end
+
+layout.move_app_after_item = function(tab, app, anchor)
+   assert_app_item(app, "layout.move_app_after_item")
+   return tab:move_after(app, anchor)
+end
+
 layout.swap = function(tab, left, right)
    if left == right then
       return true
@@ -695,21 +781,111 @@ layout.swap = function(tab, left, right)
    return true
 end
 
+layout.move_all = function(tab, items, target_page, position)
+   assert(type(items) == "table", "items must be a table")
+   assert_page_table(target_page, "layout.move_all")
+
+   local insert_at = position
+   for _, item in ipairs(items) do
+      if not tab:move_item_to_page(item, target_page, insert_at) then
+         return false
+      end
+
+      if insert_at ~= nil then
+         insert_at = insert_at + 1
+      end
+   end
+
+   return true
+end
+
+layout.move_matching = function(tab, query, target_page, position)
+   local items = {}
+
+   tab:visit_items(function(item)
+      if is_movable_container_item(item) and matches_query(item, query) then
+         table.insert(items, item)
+      end
+   end)
+
+   return tab:move_all(items, target_page, position)
+end
+
+layout.move_apps_into_folder = function(tab, items, folder, position)
+   assert(type(items) == "table", "items must be a table")
+   assert_folder_item(folder, "layout.move_apps_into_folder")
+
+   local insert_at = position
+   for _, app in ipairs(items) do
+      if not tab:move_app_to_folder(app, folder, insert_at) then
+         return false
+      end
+
+      if insert_at ~= nil then
+         insert_at = insert_at + 1
+      end
+   end
+
+   return true
+end
+
 layout.transaction = function(tab, callback)
    assert(type(callback) == "function", "transaction callback must be a function")
 
    local working = tab:clone()
-   local ok, result = pcall(callback, working)
+   local packed
+   local ok, err = pcall(function()
+      packed = table.pack(callback(working))
+   end)
    if not ok then
-      return false, result
+      return false, err
    end
 
-   if result == false then
-      return false
+   if packed[1] == false then
+      return false, table.unpack(packed, 2, packed.n)
    end
 
    apply_working_layout(tab, working)
-   return true, result
+   return true, table.unpack(packed, 1, packed.n)
+end
+
+layout.preview = function(tab, callback)
+   assert(type(callback) == "function", "preview callback must be a function")
+
+   local working = tab:clone()
+   local packed
+   local ok, err = pcall(function()
+      packed = table.pack(callback(working))
+   end)
+   if not ok then
+      return false, err
+   end
+
+   return true, working, table.unpack(packed, 1, packed.n)
+end
+
+layout.transact_move = function(tab, item, target_page, position, validate_options)
+   local item_ref = item and item.ref
+   if type(item_ref) ~= "string" then
+      error("layout.transact_move requires an item with a stable ref")
+   end
+
+   return tab:transaction(function(working)
+      local working_item = find_item_by_ref(working, item_ref)
+      local working_page = resolve_working_page(tab, working, target_page)
+      if not working:move_item_to_page(working_item, working_page, position) then
+         return false
+      end
+
+      if validate_options ~= nil then
+         local issues = working:validate(validate_options)
+         if #issues > 0 then
+            return false, issues
+         end
+      end
+
+      return true
+   end)
 end
 
 layout.pack_pages = function(tab, options)

@@ -169,8 +169,15 @@ All-item helpers:
 - `layout:move_item_to_new_page(item[, index])`
 - `layout:move_before(item, anchor)`
 - `layout:move_after(item, anchor)`
+- `layout:move_all(items, page[, position])`
+- `layout:move_matching(query, page[, position])`
+- `layout:move_to_page_start(item, page)`
+- `layout:move_to_page_end(item, page)`
+- `layout:move_to_dock(item[, position])`
 - `layout:swap(left, right)`
 - `layout:pack_pages([options])`
+- `layout:preview(fn)`
+- `layout:transact_move(item, page[, position[, validate_options]])`
 - `layout:transaction(fn)`
 
 Folder/app mutation helpers:
@@ -179,6 +186,10 @@ Folder/app mutation helpers:
 - `layout:move_app_to_folder(app, folder[, position])`
 - `layout:move_app_before_in_folder(app, folder, anchor)`
 - `layout:move_app_after_in_folder(app, folder, anchor)`
+- `layout:move_apps_into_folder(apps, folder[, position])`
+- `layout:move_app_out_of_folder(app, page[, position])`
+- `layout:move_app_before_item(app, anchor)`
+- `layout:move_app_after_item(app, anchor)`
 - `layout:move_app_to_page(app, page[, position])`
 
 Mutation helper:
@@ -208,6 +219,15 @@ without relying on generic relative moves.
 `layout:swap(...)` exchanges two items only when each item is valid in the
 other item's container. `layout:pack_pages(...)` compacts the current top-level
 item order back into dock/pages using `reshape` slot rules.
+
+`layout:move_all(...)` and `layout:move_matching(...)` provide bulk top-level
+reorganization helpers. `move_matching` accepts either a string query or a
+predicate function.
+
+`layout:preview(fn)` runs `fn` on a cloned working layout and returns that
+modified preview without mutating the original. `layout:transact_move(...)`
+performs one move through the transaction path and can optionally validate
+before commit.
 
 `layout:transaction(fn)` runs `fn` against a cloned working layout and commits
 the result only if `fn` returns normally and does not return `false`.
