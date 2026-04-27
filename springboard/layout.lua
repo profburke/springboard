@@ -94,6 +94,12 @@ local function assert_page_table(value, operation)
    end
 end
 
+local function assert_folder_item(value, operation)
+   if not kind.is(value, "folder") then
+      error(string.format("%s requires a folder; found %s", operation, kind.of(value)))
+   end
+end
+
 local function item_slot_count(value)
    if type(value) ~= "table" then
       return nil
@@ -164,6 +170,18 @@ local function insert_into_container(container, index, item)
    end
 
    table.insert(container, index or (#container + 1), item)
+end
+
+local function ensure_folder_anchor(folder, anchor, operation)
+   folder.items = folder.items or {}
+
+   for index, item in ipairs(folder.items) do
+      if item == anchor then
+         return index
+      end
+   end
+
+   error(string.format("%s requires an anchor already inside the folder", operation))
 end
 
 local function find_item_location_in_items(items, target, page_ref, parent_container)
@@ -468,19 +486,33 @@ layout.remove_app = function(tab, app)
    return removed
 end
 
-layout.move_app_to_folder = function(tab, app, folder)
+layout.move_app_to_folder = function(tab, app, folder, position)
    assert_app_item(app, "layout.move_app_to_folder")
-   if not kind.is(folder, "folder") then
-      error(string.format("layout.move_app_to_folder requires a folder; found %s", kind.of(folder)))
-   end
+   assert_folder_item(folder, "layout.move_app_to_folder")
 
    if not tab:remove_app(app) then
       return false
    end
 
    folder.items = folder.items or {}
-   table.insert(folder.items, app)
+   table.insert(folder.items, position or (#folder.items + 1), app)
    return true
+end
+
+layout.move_app_before_in_folder = function(tab, app, folder, anchor)
+   assert_app_item(app, "layout.move_app_before_in_folder")
+   assert_folder_item(folder, "layout.move_app_before_in_folder")
+
+   local anchor_index = ensure_folder_anchor(folder, anchor, "layout.move_app_before_in_folder")
+   return tab:move_app_to_folder(app, folder, anchor_index)
+end
+
+layout.move_app_after_in_folder = function(tab, app, folder, anchor)
+   assert_app_item(app, "layout.move_app_after_in_folder")
+   assert_folder_item(folder, "layout.move_app_after_in_folder")
+
+   local anchor_index = ensure_folder_anchor(folder, anchor, "layout.move_app_after_in_folder")
+   return tab:move_app_to_folder(app, folder, anchor_index + 1)
 end
 
 layout.move_app_to_page = function(tab, app, target_page, position)

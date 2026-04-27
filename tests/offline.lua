@@ -60,6 +60,15 @@ local function assert_grid_metadata(item, expected_grid_size, expected_slots)
   assert(type(slot_size.height) == "number")
 end
 
+local function index_of(items, target)
+  for index, item in ipairs(items) do
+    if item == target then
+      return index
+    end
+  end
+  return nil
+end
+
 local fixture = "tests/fixtures/springboard-layout-sample.plist"
 local layout = springboard.load_plist(fixture)
 
@@ -272,6 +281,32 @@ if folder and a then
   assert(layout:move_app_to_folder(a, folder) == true)
   assert(#folder.items == before + 1)
   assert(folder.items[#folder.items] == a)
+end
+
+local folder_position_layout = springboard.load_plist(fixture)
+local folder_position_folder = first_folder(folder_position_layout)
+local folder_position_apps = folder_position_layout:flatten()
+if folder_position_folder and #folder_position_folder.items >= 2 and #folder_position_apps >= 3 then
+  local moving = folder_position_apps[1]
+  local first_child = folder_position_folder.items[1]
+  local second_child = folder_position_folder.items[2]
+
+  assert(folder_position_layout:move_app_to_folder(moving, folder_position_folder, 1) == true)
+  assert(folder_position_folder.items[1] == moving)
+
+  assert(folder_position_layout:move_app_to_page(moving, folder_position_layout.dock) == true)
+  assert(folder_position_layout:move_app_before_in_folder(moving, folder_position_folder, second_child) == true)
+  assert(folder_position_folder.items[2] == moving)
+
+  assert(folder_position_layout:move_app_to_page(moving, folder_position_layout.dock) == true)
+  assert(folder_position_layout:move_app_after_in_folder(moving, folder_position_folder, second_child) == true)
+  assert(index_of(folder_position_folder.items, moving) == index_of(folder_position_folder.items, second_child) + 1)
+
+  local bad_anchor_ok, bad_anchor_err = pcall(function()
+    folder_position_layout:move_app_before_in_folder(folder_position_apps[2], folder_position_folder, folder_position_layout.dock[1])
+  end)
+  assert(bad_anchor_ok == false)
+  assert(bad_anchor_err:match("anchor already inside the folder"))
 end
 
 if folder then

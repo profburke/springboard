@@ -172,7 +172,9 @@ All-item helpers:
 Folder/app mutation helpers:
 
 - `layout:remove_app(app)`
-- `layout:move_app_to_folder(app, folder)`
+- `layout:move_app_to_folder(app, folder[, position])`
+- `layout:move_app_before_in_folder(app, folder, anchor)`
+- `layout:move_app_after_in_folder(app, folder, anchor)`
 - `layout:move_app_to_page(app, page[, position])`
 
 Mutation helper:
@@ -190,6 +192,11 @@ Override these for device-specific targets, especially iPad layouts.
 `layout:move_before(...)` and `layout:move_after(...)` move an item relative to
 another item, including moving apps into folders when the anchor is inside a
 folder.
+
+`layout:move_app_to_folder(...)` accepts an optional insertion position.
+`layout:move_app_before_in_folder(...)` and
+`layout:move_app_after_in_folder(...)` provide explicit folder-child placement
+without relying on generic relative moves.
 
 `layout:transaction(fn)` runs `fn` against a cloned working layout and commits
 the result only if `fn` returns normally and does not return `false`.

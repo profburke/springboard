@@ -92,7 +92,9 @@ Methods:
 - `move_after(item, anchor)`
 - `transaction(fn)`
 - `remove_app(app)`
-- `move_app_to_folder(app, folder)`
+- `move_app_to_folder(app, folder[, position])`
+- `move_app_before_in_folder(app, folder, anchor)`
+- `move_app_after_in_folder(app, folder, anchor)`
 - `move_app_to_page(app, page[, position])`
 
 `find*` methods accept either a plain substring or a Lua pattern.
@@ -111,6 +113,10 @@ default.
 
 `move_before` and `move_after` place an item relative to another item. If the
 anchor is inside a folder, apps can move into that folder through the same API.
+
+`move_app_to_folder` accepts an optional insertion position. The explicit
+`move_app_before_in_folder` and `move_app_after_in_folder` helpers target
+folder-child ordering directly.
 
 `transaction(fn)` runs `fn` against a cloned working layout and commits only on
 success.
