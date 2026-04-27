@@ -28,8 +28,7 @@ What does not work yet:
 - first-class widget editing
 - first-class smart stack editing
 - unknown item editing
-- safe generic mutation helpers for opaque items
-- widget/stack movement with grid-size validation
+- exact sparse-page placement preservation on iOS 18+/26
 
 ## Build
 
@@ -130,15 +129,17 @@ Creating and deleting folders is unsupported. Empty folders are allowed.
 
 - preserved as opaque items
 - include `ref` and `__store`
-- report `:support() == "opaque"`
 - report `:is_editable() == false`
 
-Research indicates widgets should be movable once grid-size validation exists.
-Widget and stack `gridSize` metadata is parsed when present. Use
-`:grid_size()`, `:slot_size()`, or `:slot_count()` to inspect it. Known sizes
-are modeled as `small` = 2x2, `medium` = 4x2, and `large` = 4x4. The
-iPad-only `xtralarge` value is preserved but does not yet have a verified slot
-footprint.
+Widgets and stacks are movable as atomic items, but their internals remain
+opaque. `gridSize` metadata is parsed when present. Use `:grid_size()`,
+`:slot_size()`, or `:slot_count()` to inspect normalized compact-layout
+footprints. The library normalizes both `xtralarge` and `extraLarge` to
+`extraLarge`.
+
+Exact sparse-page placement is not modeled. On iOS 18+/26, the raw layout
+plist does not expose explicit gap coordinates, so movement/reshape support is
+for compacted layouts only.
 
 ## Layout Helpers
 
@@ -158,6 +159,8 @@ All-item helpers:
 - `layout:opaque_items()`
 - `layout:has_opaque_items()`
 - `layout:validate([options])`
+- `layout:remove_item(item)`
+- `layout:move_item_to_page(item, page[, position])`
 
 Folder/app mutation helpers:
 
@@ -167,11 +170,15 @@ Folder/app mutation helpers:
 
 Mutation helper:
 
-- `layout.reshape(flat_items)`
+- `layout.reshape(flat_items[, options])`
 
-`layout.reshape(...)` accepts apps and folders. Folders move as atomic
-containers. Passing widgets, stacks, unknown items, or other non-movable items
-is an error.
+`layout.reshape(...)` accepts apps, folders, widgets, and stacks. Folders,
+widgets, and stacks move atomically. Unknown items are still rejected.
+
+`layout:validate({ dock_capacity = N, page_capacity = M })` checks compacted
+slot usage. `layout.reshape(..., { dock_capacity = N, page_capacity = M })`
+packs items by slot footprint using defaults of dock `4` and page `24`.
+Override these for device-specific targets, especially iPad layouts.
 
 ## Device API
 

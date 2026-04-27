@@ -61,36 +61,39 @@ Open questions:
 
 Current support:
 
-- opaque preserved item
+- first-class movable opaque item
 - discoverable through `visit_items` and `opaque_items`
-- not accepted by mutation helpers
+- accepted by `layout.reshape` and `move_item_to_page`
 - research indicates widgets are safe to move if slot size is respected
 - creating, deleting, and editing widgets is unsupported
-- `gridSize` defines widget slot size: `small`, `medium`, `large`, or `xtralarge` on iPad
+- `gridSize` defines widget slot size: `small`, `medium`, `large`, or `extraLarge` on iPad
 - parsed metadata includes `gridSize`, `widgetIdentifier`, `containerBundleIdentifier`, and `elementType` when present
 - `grid_size()`, `slot_size()`, and `slot_count()` expose verified slot dimensions
+- compacted layout validation can account for widget slot usage
+- exact sparse-page gap placement is unsupported because the plist does not expose coordinates
 
 Open questions:
 
 - Can widget configuration be preserved after movement?
 - Are there widget records that do not have bundle identifiers?
-- How should page validation account for occupied slots, device class, and page capacity?
+- Where does iOS store sparse home screen gap coordinates, if anywhere accessible?
 
 ## Smart Stack
 
 Current support:
 
-- opaque preserved item
+- first-class movable opaque item
 - discoverable through `visit_items` and `opaque_items`
-- not accepted by mutation helpers
+- accepted by `layout.reshape` and `move_item_to_page`
 - `gridSize` metadata is parsed when present
 - `grid_size()`, `slot_size()`, and `slot_count()` expose verified slot dimensions
+- compacted layout validation can account for stack slot usage
+- exact sparse-page gap placement is unsupported because the plist does not expose coordinates
 
 Open questions:
 
 - How are stack children ordered and configured?
 - Which metadata controls rotation/suggestions behavior?
-- Can stacks move as atomic containers without modeling their children?
 - Can widgets be added to or removed from a stack safely?
 - How should missing bundle identifiers inside stack elements be handled?
 

@@ -1,4 +1,5 @@
 local kind = require "springboard.kind"
+local grid = require "springboard.grid"
 local widget_mt = {}
 
 widget_mt.__tostring = function(w)
@@ -11,14 +12,8 @@ local widget = {}
 widget.__meta = widget_mt
 widget_mt.__index = widget
 
-local grid_sizes = {
-   small = { width = 2, height = 2, slots = 4 },
-   medium = { width = 4, height = 2, slots = 8 },
-   large = { width = 4, height = 4, slots = 16 },
-}
-
 widget.support = function()
-   return "opaque"
+   return "movable"
 end
 
 widget.is_opaque = function()
@@ -29,12 +24,16 @@ widget.is_editable = function()
    return false
 end
 
+widget.is_movable = function()
+   return true
+end
+
 widget.grid_size = function(self)
-   return self.gridSize
+   return grid.normalize(self.gridSize)
 end
 
 widget.slot_size = function(self)
-   return grid_sizes[self:grid_size()]
+   return grid.size(self.gridSize)
 end
 
 widget.slot_count = function(self)

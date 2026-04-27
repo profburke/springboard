@@ -1,4 +1,5 @@
 local kind = require "springboard.kind"
+local grid = require "springboard.grid"
 local stack_mt = {}
 
 stack_mt.__tostring = function(w)
@@ -11,14 +12,8 @@ local stack = {}
 stack.__meta = stack_mt
 stack_mt.__index = stack
 
-local grid_sizes = {
-   small = { width = 2, height = 2, slots = 4 },
-   medium = { width = 4, height = 2, slots = 8 },
-   large = { width = 4, height = 4, slots = 16 },
-}
-
 stack.support = function()
-   return "opaque"
+   return "movable"
 end
 
 stack.is_opaque = function()
@@ -29,12 +24,16 @@ stack.is_editable = function()
    return false
 end
 
+stack.is_movable = function()
+   return true
+end
+
 stack.grid_size = function(self)
-   return self.gridSize
+   return grid.normalize(self.gridSize)
 end
 
 stack.slot_size = function(self)
-   return grid_sizes[self:grid_size()]
+   return grid.size(self.gridSize)
 end
 
 stack.slot_count = function(self)

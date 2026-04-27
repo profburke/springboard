@@ -53,7 +53,6 @@ end
 
 local function assert_grid_metadata(item, expected_grid_size, expected_slots)
   assert(item:grid_size() == expected_grid_size)
-  assert(item.gridSize == expected_grid_size)
   assert(item:slot_count() == expected_slots)
   local slot_size = item:slot_size()
   assert(slot_size.slots == expected_slots)
@@ -104,13 +103,16 @@ layout:visit_items(function(item)
     end
   elseif kind.is(item, "widget") or kind.is(item, "stack") or kind.is(item, "unknown") then
     saw_opaque = true
-    assert(item:support() == "opaque")
     assert(item:is_opaque() == true)
     assert(item:is_editable() == false)
     if kind.is(item, "widget") or kind.is(item, "stack") then
+      assert(item:support() == "movable")
+      assert(item:is_movable() == true)
       assert(type(item.grid_size) == "function")
       assert(type(item.slot_size) == "function")
       assert(type(item.slot_count) == "function")
+    else
+      assert(item:support() == "opaque")
     end
   end
 end)
@@ -134,6 +136,7 @@ layout:visit_items(function(item)
 end)
 if sample_widget then
   assert_grid_metadata(sample_widget, "medium", 8)
+  assert(sample_widget.gridSize == "medium")
   assert(type(sample_widget.widgetIdentifier) == "string")
   assert(type(sample_widget.containerBundleIdentifier) == "string")
   assert(sample_widget.elementType == "widget")
@@ -159,6 +162,13 @@ if a and folder then
   assert(folder:is_editable() == false)
   assert(folder:is_opaque() == false)
   assert(folder:count() == #folder.items)
+end
+
+if sample_widget and a and b and c then
+  local reshaped = layout.reshape({ a, b, c, sample_widget }, { page_capacity = 24 })
+  assert(#reshaped.dock == 3)
+  assert(kind.of(reshaped.pages[1][1]) == "widget")
+  assert(reshaped.pages[1][1] == sample_widget)
 end
 
 local folder_app
@@ -191,12 +201,26 @@ if folder then
   assert(issues[1].item == folder)
 end
 
+local slot_issues = layout:validate({ dock_capacity = 4, page_capacity = 24 })
+assert(#slot_issues == 0)
+
+if sample_widget then
+  local compacted = {}
+  for i = 1, 17 do
+    compacted[i] = apps[i]
+  end
+  table.insert(compacted, sample_widget)
+  local overfull = springboard.layout.new({}, { compacted })
+  local issues = overfull:validate({ page_capacity = 24 })
+  assert(#issues == 1)
+  assert(issues[1].kind == "page_capacity")
+end
+
 local ok, err = pcall(function()
   layout.reshape({ apps[1], opaque[1] })
 end)
 if opaque[1] then
-  assert(ok == false)
-  assert(err:match("layout%.reshape only supports app and folder items"))
+  assert(ok == true)
 end
 
 local unknown = require "springboard.unknown"
@@ -207,9 +231,13 @@ assert(unknown_item:is_opaque() == true)
 assert(unknown_item:is_editable() == false)
 
 local synthetic_xlarge_widget = setmetatable({ gridSize = "xtralarge" }, springboard.widget.__meta)
-assert(synthetic_xlarge_widget:grid_size() == "xtralarge")
-assert(synthetic_xlarge_widget:slot_size() == nil)
-assert(synthetic_xlarge_widget:slot_count() == nil)
+assert(synthetic_xlarge_widget:grid_size() == "extraLarge")
+assert(synthetic_xlarge_widget:slot_size().slots == 24)
+assert(synthetic_xlarge_widget:slot_count() == 24)
+
+local synthetic_large_stack = setmetatable({ gridSize = "extraLarge" }, springboard.stack.__meta)
+assert(synthetic_large_stack:grid_size() == "extraLarge")
+assert(synthetic_large_stack:slot_count() == 24)
 
 local unknown_layout = springboard.load_plist("tests/fixtures/springboard-unknown-item.plist")
 local parsed_unknown = unknown_layout.dock[1]
@@ -224,7 +252,7 @@ local unknown_ok, unknown_err = pcall(function()
   layout.reshape({ parsed_unknown })
 end)
 assert(unknown_ok == false)
-assert(unknown_err:match("layout%.reshape only supports app and folder items"))
+assert(unknown_err:match("layout%.reshape only supports app, folder, widget, and stack items"))
 
 local edge_layout = springboard.load_plist("tests/fixtures/springboard-edge-cases.plist")
 assert(edge_layout.__source == "file")
@@ -254,6 +282,21 @@ assert(#edge_opaque == 1)
 assert(kind.of(edge_opaque[1]) == "widget")
 assert(edge_opaque[1].bundleIdentifier == nil)
 assert_grid_metadata(edge_opaque[1], "small", 4)
+
+local moved_widget_layout = springboard.load_plist(fixture)
+local moved_widget
+moved_widget_layout:visit_items(function(item)
+  if not moved_widget and kind.is(item, "widget") then
+    moved_widget = item
+  end
+end)
+assert(moved_widget_layout:move_item_to_page(moved_widget, moved_widget_layout.pages[1]) == true)
+assert(moved_widget_layout.pages[1][#moved_widget_layout.pages[1]] == moved_widget)
+local dock_move_ok, dock_move_err = pcall(function()
+  moved_widget_layout:move_item_to_page(moved_widget, moved_widget_layout.dock)
+end)
+assert(dock_move_ok == false)
+assert(dock_move_err:match("does not support widget in the dock"))
 
 local roundtrip_path = "/tmp/springboard-offline-roundtrip.plist"
 local roundtrip = springboard.load_plist(fixture)

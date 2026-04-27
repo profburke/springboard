@@ -24,21 +24,22 @@ Completed:
 - folder capacity validation is opt-in because the real limits vary
 - apps and web clips are move-only; field editing/create/delete are unsupported
 - folders are move-only containers; create/delete are unsupported and empty folders are allowed
-- widget movement is plausible once `gridSize`/slot validation exists
+- widgets and smart stacks are movable atomic opaque items
 - App Clips are out of scope unless raw SpringBoard fixtures prove otherwise
 - widgets, stacks, and unknown payloads made explicit opaque item kinds
-- reshape restricted to movable apps and folders
+- reshape supports compacted apps, folders, widgets, and stacks
 - round-trip identity moved to opaque `ref`
 - per-layout ownership moved to hidden `__store` handle
 - layout provenance added via `__source`
 - `set_layout` rejects file-loaded layouts unless forced
+- compacted slot validation exists for dock/page capacity
 - docs rewritten to match the current API
 - offline fixture-backed tests added
 - top-level `springboard` module made into a Lua facade over the C bridge and model modules
 
 Still weak:
 
-- widgets and smart stacks are preserved but not first-class
+- sparse home screen gap placement is not modeled
 - device-backed integration coverage is still thin and manual
 
 ## Non-Goals
@@ -87,8 +88,8 @@ Responsibilities:
 
 - define the model surface
 - provide traversal and search helpers
-- provide safe layout reshaping for movable app/folder flows
-- provide basic app/folder movement helpers
+- provide compacted layout reshaping for movable items
+- provide app/folder and generic movable-item page movement helpers
 - provide opt-in validation for target-specific folder capacity
 - make opaque unsupported items discoverable instead of silently dropping them
 
@@ -112,8 +113,8 @@ Use these concepts:
 - `Item`: generic SpringBoard thing
 - `App`: launchable app or web clip style entry
 - `Folder`: named item containing child items
-- `Widget`: opaque preserved widget item
-- `Stack`: opaque preserved smart stack item
+- `Widget`: movable opaque widget item
+- `Stack`: movable opaque smart stack item
 - `Unknown`: opaque fallback for unrecognized item payloads
 
 Each parsed item should continue to have:
@@ -184,7 +185,7 @@ Delivered:
 Remaining later:
 
 - decide how web clips should be represented if they need distinct behavior
-- represent widget movement safely using `gridSize`
+- find the source of sparse-page gap coordinates on iOS 18+/26
 
 ### Phase 3: Rebuild Serialization Identity
 
@@ -202,9 +203,11 @@ Status: complete for now
 
 Decision:
 
-- widgets, smart stacks, and unknown payloads are opaque preserved items
+- widgets and smart stacks are movable opaque preserved items
+- unknown payloads remain opaque preserved fallback items
 - they are discoverable via `visit_items`, `opaque_items`, and `has_opaque_items`
-- mutation helpers do not accept them
+- generic page movement and reshape accept widgets/stacks
+- folder mutation remains app-only
 
 Not in scope yet:
 

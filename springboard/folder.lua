@@ -29,6 +29,10 @@ folder.is_movable = function()
    return true
 end
 
+folder.slot_count = function()
+   return 1
+end
+
 folder.count = function(f)
    return #(f.items or {})
 end

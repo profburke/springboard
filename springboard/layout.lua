@@ -2,6 +2,9 @@ local kind = require "springboard.kind"
 local page = require "springboard.page"
 local layout_mt = {}
 
+local default_dock_capacity = 4
+local default_page_capacity = 24
+
 local function wrap_page(items)
    if kind.is(items, "page") then
       return items
@@ -52,7 +55,10 @@ local function contains_or_matches(value, pat)
 end
 
 local function is_movable_container_item(value)
-   return kind.is(value, "app") or kind.is(value, "folder")
+   return kind.is(value, "app")
+      or kind.is(value, "folder")
+      or kind.is(value, "widget")
+      or kind.is(value, "stack")
 end
 
 local function assert_app_item(value, operation)
@@ -65,6 +71,40 @@ local function assert_page_table(value, operation)
    if type(value) ~= "table" then
       error(string.format("%s requires a page table; found %s", operation, type(value)))
    end
+end
+
+local function item_slot_count(value)
+   if type(value) ~= "table" then
+      return nil
+   end
+
+   if kind.is(value, "app") or kind.is(value, "folder") then
+      return 1
+   end
+
+   if (kind.is(value, "widget") or kind.is(value, "stack")) and type(value.slot_count) == "function" then
+      return value:slot_count()
+   end
+
+   return nil
+end
+
+local function resolve_capacities(options)
+   if options == nil then
+      return default_dock_capacity, default_page_capacity
+   end
+
+   assert(type(options) == "table", "options must be a table")
+
+   local dock_capacity = options.dock_capacity or default_dock_capacity
+   local page_capacity = options.page_capacity or default_page_capacity
+
+   assert(type(dock_capacity) == "number", "dock_capacity must be a number")
+   assert(type(page_capacity) == "number", "page_capacity must be a number")
+   assert(dock_capacity >= 0, "dock_capacity must be non-negative")
+   assert(page_capacity > 0, "page_capacity must be positive")
+
+   return dock_capacity, page_capacity
 end
 
 local function remove_from_items(items, target)
@@ -86,12 +126,54 @@ local function assert_movable_container_items(items, operation)
    for idx, value in ipairs(items) do
       if not is_movable_container_item(value) then
          error(string.format(
-            "%s only supports app and folder items; found %s at index %d",
+            "%s only supports app, folder, widget, and stack items; found %s at index %d",
             operation,
             kind.of(value),
             idx
          ))
       end
+
+      local slots = item_slot_count(value)
+      if slots == nil then
+         error(string.format(
+            "%s cannot determine slot size for %s at index %d",
+            operation,
+            kind.of(value),
+            idx
+         ))
+      end
+   end
+end
+
+local function collect_capacity_issues(items, limit, where, issues)
+   local used = 0
+
+   for _, item in ipairs(items) do
+      local slots = item_slot_count(item)
+      if slots == nil then
+         table.insert(issues, {
+            kind = "unknown_slot_footprint",
+            item = item,
+            location = where,
+            message = string.format(
+               "%s contains %s with unknown slot footprint",
+               where,
+               kind.of(item)
+            ),
+         })
+      else
+         used = used + slots
+      end
+   end
+
+   if used > limit then
+      table.insert(issues, {
+         kind = where == "dock" and "dock_capacity" or "page_capacity",
+         limit = limit,
+         count = used,
+         location = where,
+         message = string.format("%s consumes %d slots; limit is %d", where, used, limit),
+      })
    end
 end
 
@@ -208,6 +290,8 @@ end
 layout.validate = function(tab, options)
    local issues = {}
    local folder_capacity = options and options.folder_capacity
+   local dock_capacity = options and options.dock_capacity
+   local page_capacity = options and options.page_capacity
 
    if folder_capacity ~= nil then
       assert(type(folder_capacity) == "number", "folder_capacity must be a number")
@@ -227,6 +311,18 @@ layout.validate = function(tab, options)
             })
          end
       end)
+   end
+
+   if dock_capacity ~= nil then
+      assert(type(dock_capacity) == "number", "dock_capacity must be a number")
+      collect_capacity_issues(tab.dock, dock_capacity, "dock", issues)
+   end
+
+   if page_capacity ~= nil then
+      assert(type(page_capacity) == "number", "page_capacity must be a number")
+      for index, current in ipairs(tab.pages) do
+         collect_capacity_issues(current, page_capacity, string.format("page %d", index), issues)
+      end
    end
 
    return issues
@@ -262,49 +358,84 @@ end
 
 layout.move_app_to_page = function(tab, app, target_page, position)
    assert_app_item(app, "layout.move_app_to_page")
-   assert_page_table(target_page, "layout.move_app_to_page")
+   return tab:move_item_to_page(app, target_page, position)
+end
 
-   if not tab:remove_app(app) then
+layout.remove_item = function(tab, item)
+   if not is_movable_container_item(item) then
+      error(string.format("layout.remove_item only supports movable items; found %s", kind.of(item)))
+   end
+
+   local removed = false
+   each_page(tab, function(current)
+      if not removed then
+         removed = remove_from_items(current, item)
+      end
+   end)
+
+   return removed
+end
+
+layout.move_item_to_page = function(tab, item, target_page, position)
+   if not is_movable_container_item(item) then
+      error(string.format("layout.move_item_to_page only supports movable items; found %s", kind.of(item)))
+   end
+   assert_page_table(target_page, "layout.move_item_to_page")
+
+   if target_page == tab.dock and item_slot_count(item) ~= 1 then
+      error(string.format("layout.move_item_to_page does not support %s in the dock", kind.of(item)))
+   end
+
+   if not tab:remove_item(item) then
       return false
    end
 
-   table.insert(target_page, position or (#target_page + 1), app)
+   table.insert(target_page, position or (#target_page + 1), item)
    return true
 end
 
-local dockMax = 4
-local pageMax = 9
--- TODO: handle fillPercent
--- TODO: pass in page size as a parameter with a default (x = x or default)
-layout.reshape = function(tab, fillPercent)
+layout.reshape = function(tab, options)
    local pages = {}
    local dock = {}
    local current_page = {}
-   local count = 1
+   local dock_slots = 0
+   local page_slots = 0
+   local dock_closed = false
    local insert = table.insert
+   local dock_capacity, page_capacity = resolve_capacities(options)
 
    assert_movable_container_items(tab, "layout.reshape")
 
-   for i, value in ipairs(tab) do
-      if i < dockMax then
+   for _, value in ipairs(tab) do
+      local slots = item_slot_count(value)
+
+      if slots > page_capacity then
+         error(string.format(
+            "layout.reshape cannot place %s consuming %d slots into page capacity %d",
+            kind.of(value),
+            slots,
+            page_capacity
+         ))
+      end
+
+      if not dock_closed and slots == 1 and dock_slots + slots <= dock_capacity then
          insert(dock, value)
-      elseif i == dockMax then
-         insert(dock, value)
-         current_page = {}
-         count = 1
-      elseif count % pageMax ~= 0 then
-         insert(current_page, value)
-         count = count + 1
+         dock_slots = dock_slots + slots
       else
+         dock_closed = true
+         if page_slots + slots > page_capacity and #current_page > 0 then
+            insert(pages, wrap_page(current_page))
+            current_page = {}
+            page_slots = 0
+         end
+
          insert(current_page, value)
-         insert(pages, wrap_page(current_page))
-         current_page = {}
-         count = 1
+         page_slots = page_slots + slots
       end
    end
 
    if #current_page > 0 then
-      insert(pages, wrap_page(current_page))
+         insert(pages, wrap_page(current_page))
    end
 
    return layout.new(wrap_page(dock), pages)

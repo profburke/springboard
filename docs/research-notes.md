@@ -27,9 +27,14 @@ Creating or deleting widgets is not allowed.
 Editing widgets is not allowed.
 
 The `gridSize` key determines how many slots a widget takes.
-Values are `small`, `medium`, `large`, and `xtralarge` on iPad only.
-The library models `small`, `medium`, and `large` as 2x2, 4x2, and 4x4
-icon-slot footprints. The `xtralarge` footprint still needs device evidence.
+Observed values are `small`, `medium`, `large`, and `extraLarge` on iPad.
+Older notes may spell the last one as `xtralarge`; the library normalizes both.
+The library models these as 2x2, 4x2, 4x4, and 4x6 icon-slot footprints for
+compacted layout validation.
+
+Sparse home screen placement on iOS 18+ / 26 is a separate problem. The raw
+layout plist does not expose explicit row/column coordinates or placeholder
+records for gaps, so exact sparse placement is not modeled yet.
 
 ## 5. Smart Stack
 

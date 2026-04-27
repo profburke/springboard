@@ -82,6 +82,8 @@ Methods:
 - `opaque_items()`
 - `has_opaque_items()`
 - `validate([options])`
+- `remove_item(item)`
+- `move_item_to_page(item, page[, position])`
 - `remove_app(app)`
 - `move_app_to_folder(app, folder)`
 - `move_app_to_page(app, page[, position])`
@@ -90,12 +92,15 @@ Methods:
 
 Mutation:
 
-- `reshape(flat_items)`
+- `reshape(flat_items[, options])`
 
-`reshape` accepts apps and folders. Folders move as atomic containers.
+`reshape` accepts apps, folders, widgets, and stacks. They are packed as a
+compacted layout using slot footprints. Unknown items are rejected.
 
 `validate({ folder_capacity = N })` reports folder capacity issues when a caller
-provides an explicit limit. No folder limit is enforced by default.
+provides an explicit limit. `validate({ dock_capacity = N, page_capacity = M })`
+reports compacted slot-capacity issues. No device-specific limit is enforced by
+default.
 
 ### Item Kinds
 
@@ -115,14 +120,13 @@ provides an explicit limit. No folder limit is enforced by default.
 
 `Widget`
 
-- opaque preserved item
-- research indicates widgets can move once grid-size validation exists
+- movable atomic opaque item
 - `gridSize` metadata is parsed when present
 - `grid_size()`, `slot_size()`, and `slot_count()` expose verified slot dimensions
 
 `Stack`
 
-- opaque preserved item
+- movable atomic opaque item
 - `gridSize` metadata is parsed when present
 - `grid_size()`, `slot_size()`, and `slot_count()` expose verified slot dimensions
 
