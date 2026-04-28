@@ -178,8 +178,6 @@ assert(#selector_layout:find_items({ in_dock = true }) == #selector_layout.dock)
 assert(#selector_layout:find_items({ in_folder = true }) == selector_folder_child_count)
 assert(#selector_layout:find_items({ page = 1 }) == selector_page_one_count)
 assert(selector_layout:page(1) == selector_layout.pages[1])
-assert(selector_layout:page_items(1) == selector_layout.pages[1])
-assert(selector_layout:items_on_page(1) == selector_layout.pages[1])
 assert(selector_layout:dock_items() == selector_layout.dock)
 assert(selector_layout:folder_items(selector_folder) == selector_folder.items)
 assert(selector_layout:items_in_container(selector_folder) == selector_folder.items)
@@ -194,7 +192,7 @@ local selector_move_layout = springboard.load_plist(fixture)
 local selector_move_page = selector_move_layout:append_page()
 assert(selector_move_layout:move_first("Safari", selector_move_page, 1) == true)
 assert(selector_move_page[1].name == "Safari")
-assert(selector_move_layout:move_all_matching({ in_dock = true }, selector_move_page, 1) == true)
+assert(selector_move_layout:move_matching({ in_dock = true }, selector_move_page, 1) == true)
 assert(#selector_move_layout.dock == 0)
 assert(#selector_move_page == 4)
 
@@ -415,23 +413,32 @@ assert(preview_layout.dock[2].id == preview_second.id)
 
 local transact_layout = springboard.load_plist(fixture)
 local transact_item = transact_layout.dock[1]
-local transact_target = transact_layout.pages[1]
-local transact_ok, transact_result = transact_layout:transact_move(transact_item, transact_target, 1)
+local transact_ok, transact_result = transact_layout:transaction(function(working)
+  local working_item = working:find_item({ ref = transact_item.ref })
+  local working_target = working:page(1)
+  assert(working_item and working_target)
+  assert(working:move_item_to_page(working_item, working_target, 1) == true)
+  return true
+end)
 assert(transact_ok == true)
 assert(transact_result == true)
 assert(transact_layout.pages[1][1].id == transact_item.id)
 
 local transact_fail_layout = springboard.load_plist(fixture)
 local transact_fail_item = transact_fail_layout.dock[1]
-local transact_fail_target = transact_fail_layout.pages[1]
-local fail_ok, fail_issues = transact_fail_layout:transact_move(
-  transact_fail_item,
-  transact_fail_target,
-  1,
-  { page_capacity = 0 }
-)
+local fail_ok, fail_issues = transact_fail_layout:transaction(function(working)
+  local working_item = working:find_item({ ref = transact_fail_item.ref })
+  local working_target = working:page(1)
+  assert(working_item and working_target)
+  assert(working:move_item_to_page(working_item, working_target, 1) == true)
+  local issues = working:validate({ page_capacity = 0 })
+  if #issues > 0 then
+    return false, issues
+  end
+  return true
+end)
 assert(fail_ok == false)
-assert(type(fail_issues) == "string" or type(fail_issues) == "table")
+assert(type(fail_issues) == "table")
 assert(transact_fail_layout.dock[1].id == transact_fail_item.id)
 
 local a, b, c = apps[1], apps[2], apps[3]

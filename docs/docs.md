@@ -96,22 +96,18 @@ Methods:
 - `find_page_of(item)`
 - `find_container_of(item)`
 - `page(index)`
-- `page_items(index)`
-- `items_on_page(index)`
 - `dock_items()`
 - `folder_items(folder)`
 - `items_in_container(container)`
 - `append_page([index])`
 - `validate([options])`
 - `remove_item(item)`
-- `move(item, page[, position])`
 - `move_item_to_page(item, page[, position])`
 - `move_item_to_new_page(item[, index])`
 - `move_before(item, anchor)`
 - `move_after(item, anchor)`
 - `move_all(items, page[, position])`
 - `move_matching(query, page[, position])`
-- `move_all_matching(query, page[, position])`
 - `move_first(query, page[, position])`
 - `move_to_page_start(item, page)`
 - `move_to_page_end(item, page)`
@@ -119,7 +115,6 @@ Methods:
 - `swap(left, right)`
 - `pack_pages([options])`
 - `preview(fn)`
-- `transact_move(item, page[, position[, validate_options]])`
 - `transaction(fn)`
 - `remove_app(app)`
 - `move_app_to_folder(app, folder[, position])`
@@ -168,8 +163,6 @@ functions. Table queries support direct item fields plus location keys such as
 `page`, `in_dock`, and `in_folder`.
 
 `preview` runs against a cloned working layout and never mutates the original.
-`transact_move` performs a single move via the transaction path and can validate
-before commit.
 
 `transaction(fn)` runs `fn` against a cloned working layout and commits only on
 success.

@@ -176,22 +176,18 @@ All-item helpers:
 - `layout:find_page_of(item)`
 - `layout:find_container_of(item)`
 - `layout:page(index)`
-- `layout:page_items(index)`
-- `layout:items_on_page(index)`
 - `layout:dock_items()`
 - `layout:folder_items(folder)`
 - `layout:items_in_container(container)`
 - `layout:append_page([index])`
 - `layout:validate([options])`
 - `layout:remove_item(item)`
-- `layout:move(item, page[, position])`
 - `layout:move_item_to_page(item, page[, position])`
 - `layout:move_item_to_new_page(item[, index])`
 - `layout:move_before(item, anchor)`
 - `layout:move_after(item, anchor)`
 - `layout:move_all(items, page[, position])`
 - `layout:move_matching(query, page[, position])`
-- `layout:move_all_matching(query, page[, position])`
 - `layout:move_first(query, page[, position])`
 - `layout:move_to_page_start(item, page)`
 - `layout:move_to_page_end(item, page)`
@@ -199,7 +195,6 @@ All-item helpers:
 - `layout:swap(left, right)`
 - `layout:pack_pages([options])`
 - `layout:preview(fn)`
-- `layout:transact_move(item, page[, position[, validate_options]])`
 - `layout:transaction(fn)`
 
 Folder/app mutation helpers:
@@ -254,9 +249,7 @@ Selector helpers accept:
 - predicate function: `function(item) return ... end`
 
 `layout:preview(fn)` runs `fn` on a cloned working layout and returns that
-modified preview without mutating the original. `layout:transact_move(...)`
-performs one move through the transaction path and can optionally validate
-before commit.
+modified preview without mutating the original.
 
 `layout:transaction(fn)` runs `fn` against a cloned working layout and commits
 the result only if `fn` returns normally and does not return `false`.

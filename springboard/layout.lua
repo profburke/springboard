@@ -284,31 +284,6 @@ local function page_index_of(tab, target_page)
    return nil
 end
 
-local function resolve_working_page(tab, working, target_page)
-   local page_index = page_index_of(tab, target_page)
-   if page_index == nil then
-      error("target page does not belong to layout")
-   end
-
-   if page_index == 0 then
-      return working.dock
-   end
-
-   return working.pages[page_index]
-end
-
-local function find_item_by_ref(tab, ref)
-   local found
-
-   tab:visit_items(function(item)
-      if not found and item.ref == ref then
-         found = item
-      end
-   end)
-
-   return found
-end
-
 local function query_matches_table(tab, item, query)
    for key, value in pairs(query) do
       if key == "kind" then
@@ -629,14 +604,6 @@ layout.page = function(tab, index)
    return tab.pages[index]
 end
 
-layout.page_items = function(tab, index)
-   return tab:page(index)
-end
-
-layout.items_on_page = function(tab, index)
-   return tab:page_items(index)
-end
-
 layout.dock_items = function(tab)
    return tab.dock
 end
@@ -798,10 +765,6 @@ layout.move_item_to_page = function(tab, item, target_page, position)
    return true
 end
 
-layout.move = function(tab, item, target_page, position)
-   return tab:move_item_to_page(item, target_page, position)
-end
-
 layout.move_to_page_start = function(tab, item, target_page)
    return tab:move_item_to_page(item, target_page, 1)
 end
@@ -960,10 +923,6 @@ layout.move_matching = function(tab, query, target_page, position)
    return tab:move_all(items, target_page, position)
 end
 
-layout.move_all_matching = function(tab, query, target_page, position)
-   return tab:move_matching(query, target_page, position)
-end
-
 layout.move_apps_into_folder = function(tab, items, folder, position)
    assert(type(items) == "table", "items must be a table")
    assert_folder_item(folder, "layout.move_apps_into_folder")
@@ -1033,30 +992,6 @@ layout.preview = function(tab, callback)
    end
 
    return true, working, table.unpack(packed, 1, packed.n)
-end
-
-layout.transact_move = function(tab, item, target_page, position, validate_options)
-   local item_ref = item and item.ref
-   if type(item_ref) ~= "string" then
-      error("layout.transact_move requires an item with a stable ref")
-   end
-
-   return tab:transaction(function(working)
-      local working_item = find_item_by_ref(working, item_ref)
-      local working_page = resolve_working_page(tab, working, target_page)
-      if not working:move_item_to_page(working_item, working_page, position) then
-         return false
-      end
-
-      if validate_options ~= nil then
-         local issues = working:validate(validate_options)
-         if #issues > 0 then
-            return false, issues
-         end
-      end
-
-      return true
-   end)
 end
 
 layout.pack_pages = function(tab, options)

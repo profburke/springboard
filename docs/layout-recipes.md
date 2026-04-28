@@ -18,7 +18,7 @@ layout:move_item_to_new_page(safari)
 ## Move All Dock Apps To Page 1
 
 ```lua
-layout:move_all_matching({ in_dock = true }, layout:page(1), 1)
+layout:move_matching({ in_dock = true }, layout:page(1), 1)
 ```
 
 ## Move The First Matching App Into A Folder
