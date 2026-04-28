@@ -13,3 +13,6 @@ reserialize through the Lua model.
 No example currently writes a modified layout back to a device. Use
 `conn:set_layout(layout)` only after reading the write-safety notes in
 [`../docs/README.md`](../docs/README.md).
+
+For selector/mutation examples using the current layout API, see
+[`../docs/layout-recipes.md`](../docs/layout-recipes.md).

@@ -58,6 +58,9 @@ That compiles `iconlib.so` and copies it into [`springboard/`](/Users/matt/Proje
 - [`docs/`](/Users/matt/Projects/ios-icons/docs): project documentation
 - [`archive/`](/Users/matt/Projects/ios-icons/archive): historical/non-active material
 
+For common reorganization patterns, see
+[`layout-recipes.md`](/Users/matt/Projects/ios-icons/docs/layout-recipes.md).
+
 ## Basic Usage
 
 ```lua
