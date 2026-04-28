@@ -80,8 +80,12 @@ local function matches_query(item, query)
       return query(item) == true
    end
 
+   if type(query) == "table" then
+      return false
+   end
+
    if type(query) ~= "string" then
-      error(string.format("query must be a string or function; found %s", type(query)))
+      error(string.format("query must be a string, table, or function; found %s", type(query)))
    end
 
    return contains_or_matches(item.name or "", query)
@@ -305,6 +309,67 @@ local function find_item_by_ref(tab, ref)
    return found
 end
 
+local function query_matches_table(tab, item, query)
+   for key, value in pairs(query) do
+      if key == "kind" then
+         if kind.of(item) ~= value then
+            return false
+         end
+      elseif key == "page" then
+         local item_page = tab:find_page_of(item)
+         if page_index_of(tab, item_page) ~= value then
+            return false
+         end
+      elseif key == "in_dock" then
+         if (tab:find_page_of(item) == tab.dock) ~= value then
+            return false
+         end
+      elseif key == "in_folder" then
+         if kind.is(tab:find_container_of(item), "folder") ~= value then
+            return false
+         end
+      else
+         if item[key] ~= value then
+            return false
+         end
+      end
+   end
+
+   return true
+end
+
+local function query_matches(tab, item, query)
+   if type(query) == "table" then
+      return query_matches_table(tab, item, query)
+   end
+
+   return matches_query(item, query)
+end
+
+local function collect_matching_items(tab, query, predicate)
+   local result = {}
+
+   tab:visit_items(function(item)
+      if (predicate == nil or predicate(item)) and query_matches(tab, item, query) then
+         table.insert(result, item)
+      end
+   end)
+
+   return result
+end
+
+local function collect_items_by_kind(tab, wanted_kind)
+   local result = {}
+
+   tab:visit_items(function(item)
+      if kind.of(item) == wanted_kind then
+         table.insert(result, item)
+      end
+   end)
+
+   return result
+end
+
 local function assert_movable_container_items(items, operation)
    for idx, value in ipairs(items) do
       if not is_movable_container_item(value) then
@@ -430,6 +495,36 @@ layout.flatten = function(tab)
    return result
 end
 
+layout.items = function(tab)
+   local result = {}
+
+   tab:visit_items(function(item)
+      table.insert(result, item)
+   end)
+
+   return result
+end
+
+layout.apps = function(tab)
+   return tab:flatten()
+end
+
+layout.folders = function(tab)
+   return collect_items_by_kind(tab, "folder")
+end
+
+layout.widgets = function(tab)
+   return collect_items_by_kind(tab, "widget")
+end
+
+layout.stacks = function(tab)
+   return collect_items_by_kind(tab, "stack")
+end
+
+layout.unknown_items = function(tab)
+   return collect_items_by_kind(tab, "unknown")
+end
+
 layout.find_all = function(tab, pat)
    local insert = table.insert
    local result = {}
@@ -461,6 +556,30 @@ layout.find_id = function(tab, pat)
    end
 
    return nil
+end
+
+layout.filter = function(tab, query)
+   return collect_matching_items(tab, query)
+end
+
+layout.find_items = function(tab, query)
+   return tab:filter(query)
+end
+
+layout.find_item = function(tab, query)
+   return tab:find_items(query)[1]
+end
+
+layout.find_app = function(tab, query)
+   return collect_matching_items(tab, query, function(item)
+      return kind.is(item, "app")
+   end)[1]
+end
+
+layout.find_folder = function(tab, query)
+   return collect_matching_items(tab, query, function(item)
+      return kind.is(item, "folder")
+   end)[1]
 end
 
 layout.visit = function(tab, visitor)
@@ -504,6 +623,36 @@ end
 layout.find_container_of = function(tab, item)
    local location = find_item_location(tab, item)
    return location and location.container or nil
+end
+
+layout.page = function(tab, index)
+   return tab.pages[index]
+end
+
+layout.page_items = function(tab, index)
+   return tab:page(index)
+end
+
+layout.items_on_page = function(tab, index)
+   return tab:page_items(index)
+end
+
+layout.dock_items = function(tab)
+   return tab.dock
+end
+
+layout.folder_items = function(tab, folder)
+   assert_folder_item(folder, "layout.folder_items")
+   return folder.items or {}
+end
+
+layout.items_in_container = function(tab, container)
+   if kind.is(container, "folder") then
+      return tab:folder_items(container)
+   end
+
+   assert_page_table(container, "layout.items_in_container")
+   return container
 end
 
 layout.append_page = function(tab, index)
@@ -803,12 +952,16 @@ layout.move_matching = function(tab, query, target_page, position)
    local items = {}
 
    tab:visit_items(function(item)
-      if is_movable_container_item(item) and matches_query(item, query) then
+      if is_movable_container_item(item) and query_matches(tab, item, query) then
          table.insert(items, item)
       end
    end)
 
    return tab:move_all(items, target_page, position)
+end
+
+layout.move_all_matching = function(tab, query, target_page, position)
+   return tab:move_matching(query, target_page, position)
 end
 
 layout.move_apps_into_folder = function(tab, items, folder, position)
@@ -827,6 +980,24 @@ layout.move_apps_into_folder = function(tab, items, folder, position)
    end
 
    return true
+end
+
+layout.move_first = function(tab, query, target_page, position)
+   local item = tab:find_item(query)
+   if not item then
+      return false
+   end
+
+   return tab:move_item_to_page(item, target_page, position)
+end
+
+layout.move_first_into_folder = function(tab, query, folder, position)
+   local app = tab:find_app(query)
+   if not app then
+      return false
+   end
+
+   return tab:move_app_to_folder(app, folder, position)
 end
 
 layout.transaction = function(tab, callback)

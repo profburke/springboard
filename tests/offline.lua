@@ -151,6 +151,58 @@ if sample_widget then
   assert(sample_widget.elementType == "widget")
 end
 
+local selector_layout = springboard.load_plist(fixture)
+local selector_folder = first_folder(selector_layout)
+local selector_widget = selector_layout:widgets()[1]
+local selector_folder_child_count = 0
+for _, folder_item in ipairs(selector_layout:folders()) do
+  selector_folder_child_count = selector_folder_child_count + #folder_item.items
+end
+local selector_page_one_count = 0
+selector_layout:visit_items(function(item)
+  if selector_layout:find_page_of(item) == selector_layout.pages[1] then
+    selector_page_one_count = selector_page_one_count + 1
+  end
+end)
+assert(#selector_layout:items() >= #selector_layout:apps())
+assert(#selector_layout:apps() == #selector_layout:flatten())
+assert(#selector_layout:folders() >= 1)
+assert(#selector_layout:widgets() >= 1)
+assert(type(selector_layout:stacks()) == "table")
+assert(type(selector_layout:unknown_items()) == "table")
+assert(selector_layout:find_item("Safari").id == "com.apple.mobilesafari")
+assert(selector_layout:find_app({ id = "com.apple.mobilesafari" }).name == "Safari")
+assert(selector_layout:find_folder({ name = selector_folder.name }) == selector_folder)
+assert(#selector_layout:find_items({ kind = "widget", gridSize = "medium" }) >= 1)
+assert(#selector_layout:find_items({ in_dock = true }) == #selector_layout.dock)
+assert(#selector_layout:find_items({ in_folder = true }) == selector_folder_child_count)
+assert(#selector_layout:find_items({ page = 1 }) == selector_page_one_count)
+assert(selector_layout:page(1) == selector_layout.pages[1])
+assert(selector_layout:page_items(1) == selector_layout.pages[1])
+assert(selector_layout:items_on_page(1) == selector_layout.pages[1])
+assert(selector_layout:dock_items() == selector_layout.dock)
+assert(selector_layout:folder_items(selector_folder) == selector_folder.items)
+assert(selector_layout:items_in_container(selector_folder) == selector_folder.items)
+assert(selector_layout:items_in_container(selector_layout.dock) == selector_layout.dock)
+if selector_widget then
+  assert(selector_layout:find_items(function(item)
+    return kind.is(item, "widget") and item == selector_widget
+  end)[1] == selector_widget)
+end
+
+local selector_move_layout = springboard.load_plist(fixture)
+local selector_move_page = selector_move_layout:append_page()
+assert(selector_move_layout:move_first("Safari", selector_move_page, 1) == true)
+assert(selector_move_page[1].name == "Safari")
+assert(selector_move_layout:move_all_matching({ in_dock = true }, selector_move_page, 1) == true)
+assert(#selector_move_layout.dock == 0)
+assert(#selector_move_page == 4)
+
+local selector_folder_move_layout = springboard.load_plist(fixture)
+local selector_folder_target = first_folder(selector_folder_move_layout)
+assert(selector_folder_move_layout:move_first_into_folder("Safari", selector_folder_target, 1) == true)
+assert(selector_folder_target.items[1].name == "Safari")
+
 local api_layout = springboard.load_plist(fixture)
 local api_apps = api_layout:flatten()
 local api_folder = first_folder(api_layout)

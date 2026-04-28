@@ -155,12 +155,29 @@ The search helpers accept either a plain substring or a Lua pattern.
 
 All-item helpers:
 
+- `layout:items()`
+- `layout:apps()`
+- `layout:folders()`
+- `layout:widgets()`
+- `layout:stacks()`
+- `layout:unknown_items()`
+- `layout:filter(query)`
+- `layout:find_item(query)`
+- `layout:find_items(query)`
+- `layout:find_app(query)`
+- `layout:find_folder(query)`
 - `layout:clone()`
 - `layout:visit_items(fn)`
 - `layout:opaque_items()`
 - `layout:has_opaque_items()`
 - `layout:find_page_of(item)`
 - `layout:find_container_of(item)`
+- `layout:page(index)`
+- `layout:page_items(index)`
+- `layout:items_on_page(index)`
+- `layout:dock_items()`
+- `layout:folder_items(folder)`
+- `layout:items_in_container(container)`
 - `layout:append_page([index])`
 - `layout:validate([options])`
 - `layout:remove_item(item)`
@@ -171,6 +188,8 @@ All-item helpers:
 - `layout:move_after(item, anchor)`
 - `layout:move_all(items, page[, position])`
 - `layout:move_matching(query, page[, position])`
+- `layout:move_all_matching(query, page[, position])`
+- `layout:move_first(query, page[, position])`
 - `layout:move_to_page_start(item, page)`
 - `layout:move_to_page_end(item, page)`
 - `layout:move_to_dock(item[, position])`
@@ -187,6 +206,7 @@ Folder/app mutation helpers:
 - `layout:move_app_before_in_folder(app, folder, anchor)`
 - `layout:move_app_after_in_folder(app, folder, anchor)`
 - `layout:move_apps_into_folder(apps, folder[, position])`
+- `layout:move_first_into_folder(query, folder[, position])`
 - `layout:move_app_out_of_folder(app, page[, position])`
 - `layout:move_app_before_item(app, anchor)`
 - `layout:move_app_after_item(app, anchor)`
@@ -223,6 +243,12 @@ item order back into dock/pages using `reshape` slot rules.
 `layout:move_all(...)` and `layout:move_matching(...)` provide bulk top-level
 reorganization helpers. `move_matching` accepts either a string query or a
 predicate function.
+
+Selector helpers accept:
+- string query: matches `name`, `id`, `ref`, or `widgetIdentifier`
+- table query: exact field constraints such as `kind`, `id`, `gridSize`,
+  `page`, `in_dock`, or `in_folder`
+- predicate function: `function(item) return ... end`
 
 `layout:preview(fn)` runs `fn` on a cloned working layout and returns that
 modified preview without mutating the original. `layout:transact_move(...)`

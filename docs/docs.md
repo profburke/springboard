@@ -73,6 +73,17 @@ Fields:
 
 Methods:
 
+- `items()`
+- `apps()`
+- `folders()`
+- `widgets()`
+- `stacks()`
+- `unknown_items()`
+- `filter(query)`
+- `find_item(query)`
+- `find_items(query)`
+- `find_app(query)`
+- `find_folder(query)`
 - `clone()`
 - `flatten()`
 - `find(query)`
@@ -84,6 +95,12 @@ Methods:
 - `has_opaque_items()`
 - `find_page_of(item)`
 - `find_container_of(item)`
+- `page(index)`
+- `page_items(index)`
+- `items_on_page(index)`
+- `dock_items()`
+- `folder_items(folder)`
+- `items_in_container(container)`
 - `append_page([index])`
 - `validate([options])`
 - `remove_item(item)`
@@ -94,6 +111,8 @@ Methods:
 - `move_after(item, anchor)`
 - `move_all(items, page[, position])`
 - `move_matching(query, page[, position])`
+- `move_all_matching(query, page[, position])`
+- `move_first(query, page[, position])`
 - `move_to_page_start(item, page)`
 - `move_to_page_end(item, page)`
 - `move_to_dock(item[, position])`
@@ -107,6 +126,7 @@ Methods:
 - `move_app_before_in_folder(app, folder, anchor)`
 - `move_app_after_in_folder(app, folder, anchor)`
 - `move_apps_into_folder(apps, folder[, position])`
+- `move_first_into_folder(query, folder[, position])`
 - `move_app_out_of_folder(app, page[, position])`
 - `move_app_before_item(app, anchor)`
 - `move_app_after_item(app, anchor)`
@@ -142,6 +162,10 @@ the other item. `pack_pages` compacts the current top-level item order using
 
 `move_all` and `move_matching` provide bulk movement. `move_matching` accepts a
 string query or predicate function.
+
+Selector helpers accept string queries, exact-match table queries, or predicate
+functions. Table queries support direct item fields plus location keys such as
+`page`, `in_dock`, and `in_folder`.
 
 `preview` runs against a cloned working layout and never mutates the original.
 `transact_move` performs a single move via the transaction path and can validate
