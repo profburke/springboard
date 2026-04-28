@@ -8,7 +8,7 @@ local kind = springboard.kind
 
 assert(type(springboard.connect) == "function")
 assert(type(springboard.load_plist) == "function")
-assert(type(springboard.iconlib) == "table")
+assert(type(springboard.bridge) == "table")
 assert(springboard.kind == require "springboard.kind")
 assert(springboard.layout == require "springboard.layout")
 assert(springboard.app == require "springboard.app")

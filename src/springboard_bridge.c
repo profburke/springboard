@@ -11,7 +11,7 @@
 
 static const char* kLuaIndexMetaKey = "__index";
 
-static const luaL_Reg iconlib_methods[] = {
+static const luaL_Reg bridge_methods[] = {
   { "connect", ios_connect }, 
   { "ios_errno", ios_errno }, 
   { "load_plist", ios_load_layout_plist },
@@ -37,7 +37,7 @@ static const luaL_Reg sbconn_methods[] = {
 };
 
 LUALIB_API int
-luaopen_springboard_iconlib(lua_State *L)
+luaopen_springboard_bridge(lua_State *L)
 {
   luaL_newmetatable(L, kItemStoreHandleID);
   luaL_setfuncs(L, item_store_methods, 0);
@@ -51,7 +51,7 @@ luaopen_springboard_iconlib(lua_State *L)
   lua_pop(L, 1);  /* pop new metatable */
 
   luaL_newmetatable(L, kLibraryRegKey);
-  luaL_newlib(L, iconlib_methods);
+  luaL_newlib(L, bridge_methods);
 
   return 1;
 }

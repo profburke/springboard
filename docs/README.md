@@ -45,7 +45,7 @@ Build the C module with:
 make
 ```
 
-That compiles `iconlib.so` and copies it into [`springboard/`](/Users/matt/Projects/ios-icons/springboard).
+That compiles `bridge.so` and copies it into [`springboard/`](/Users/matt/Projects/ios-icons/springboard).
 
 ## Repo Layout
 

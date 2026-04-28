@@ -1,11 +1,11 @@
-local iconlib = require "springboard.iconlib"
+local bridge = require "springboard.bridge"
 
 local springboard = {
-   connect = iconlib.connect,
-   ios_errno = iconlib.ios_errno,
-   load_plist = iconlib.load_plist,
+   connect = bridge.connect,
+   ios_errno = bridge.ios_errno,
+   load_plist = bridge.load_plist,
 
-   iconlib = iconlib,
+   bridge = bridge,
 
    kind = require "springboard.kind",
    layout = require "springboard.layout",
